@@ -1,0 +1,109 @@
+/**
+ * @file Firestore Security Rules for ContestOne application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a user-ownership model where users control their own data.
+ * Administrative actions (like writing to the blog) are restricted to users
+ * with the 'admin' custom claim. Authorization is primarily based on matching
+ * the authenticated user's ID against `userId` fields in documents, and checking for
+ * the 'admin' claim on the user's auth token.
+ *
+ * Data Structure & Rules Summary:
+ * - /users/{userId}: User profiles. Writable only by the owning user. Readable by self.
+ * - /users/{userId}/savedCompetitions/{competitionId}: User's saved items. Writable by owner.
+ * - /competitions/{competitionId}: Competitions. Publicly readable. Writable only by the owner (`userId` field).
+ * - /submissions/{submissionId}: Submissions. Publicly readable. Writable only by the owner (`userId` field).
+ * - /blog/{postId}: Blog posts. Publicly readable. Writable only by users with the `admin: true` custom claim.
+ *
+ * Key Security Decisions:
+ * - Ownership is enforced via `request.auth.uid == resource.data.userId` or path-based `isOwner(userId)`.
+ * - Admin privileges are granted via custom auth tokens, checked with `request.auth.token.admin == true`.
+ *   This is a scalable and secure method for role-based access control.
+ * - Public read access is granted to competitions, submissions, and blog posts to allow for broad app functionality.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows users to manage their own profile data and related subcollections.
+     * @path /users/{userId}
+     */
+    match /users/{userId} {
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+      
+      /**
+       * @description Allows users to manage their own saved competitions.
+       * @path /users/{userId}/savedCompetitions/{competitionId}
+       */
+      match /savedCompetitions/{competitionId} {
+        allow read, write: if isSignedIn() && isOwner(userId);
+      }
+    }
+
+    /**
+     * @description Allows users to create/manage competitions they own. Publicly readable.
+     * @path /competitions/{competitionId}
+     */
+    match /competitions/{competitionId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isCompetitionOwner();
+      allow delete: if isSignedIn() && isCompetitionOwner();
+    }
+
+    /**
+     * @description Allows users to create/manage their submissions. Publicly readable.
+     * @path /submissions/{submissionId}
+     */
+    match /submissions/{submissionId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && isSubmissionOwner();
+      allow delete: if isSignedIn() && isSubmissionOwner();
+    }
+
+    /**
+     * @description Manages access to blog posts. Publicly readable, admin writable.
+     * @path /blog/{postId}
+     */
+    match /blog/{postId} {
+      allow get, list: if true;
+      allow write: if isSignedIn() && isAdmin();
+    }
+  }
+
+  // --- Helper Functions ---
+
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isExistingOwner(userId) {
+    return isSignedIn() && isOwner(userId) && resource != null;
+  }
+
+  function isCompetitionOwner() {
+    return isSignedIn() && resource != null && resource.data.userId == request.auth.uid;
+  }
+
+  function isSubmissionOwner() {
+    return isSignedIn() && resource != null && resource.data.userId == request.auth.uid;
+  }
+  
+  /**
+   * @description Checks if the requesting user has the 'admin' custom claim.
+   * This is the standard way to implement role-based access control.
+   */
+  function isAdmin() {
+    return isSignedIn() && request.auth.token.admin == true;
+  }
+}

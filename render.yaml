@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: contest-one-th-app
+    env: node
+    plan: free
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm run start"
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      # --- Firebase Environment Variables ---
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        value: "AIzaSyCLlp2Z9AtVBwnM-wPhArS6UZWiDWB3GVw"
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        value: "studio-9679421703-db44b.firebaseapp.com"
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        value: "studio-9679421703-db44b"
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        value: "1:703723799969:web:f03b3cfd2f6547e3c2f7e0"
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        value: "703723799969"
+      - key: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+        value: ""

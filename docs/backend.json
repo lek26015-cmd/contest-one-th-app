@@ -1,0 +1,252 @@
+{
+  "entities": {
+    "Competition": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Competition",
+      "type": "object",
+      "description": "Represents a competition or contest.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Competition entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the competition."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the competition."
+        },
+        "deadline": {
+          "type": "string",
+          "description": "The deadline for submitting to the competition.",
+          "format": "date-time"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the competition (e.g., design, writing, coding)."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Competition)"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "deadline",
+        "category",
+        "userId"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The username of the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user.",
+          "format": "email"
+        },
+        "profileName": {
+          "type": "string",
+          "description": "The user's displayed profile name"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "profileName"
+      ]
+    },
+    "Submission": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Submission",
+      "type": "object",
+      "description": "Represents a user's submission to a competition.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Submission entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Submission)"
+        },
+        "competitionId": {
+          "type": "string",
+          "description": "Reference to Competition. (Relationship: Competition 1:N Submission)"
+        },
+        "submissionDate": {
+          "type": "string",
+          "description": "The date the submission was made.",
+          "format": "date-time"
+        },
+        "submissionDetails": {
+          "type": "string",
+          "description": "Details and description of the submission"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "competitionId",
+        "submissionDate",
+        "submissionDetails"
+      ]
+    },
+    "SavedCompetition": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Saved Competition",
+      "type": "object",
+      "description": "Represents a user's saved (bookmarked) competition.",
+      "properties": {
+        "competitionId": {
+          "type": "string",
+          "description": "The ID of the competition that was saved."
+        },
+        "savedAt": {
+          "type": "string",
+          "description": "The timestamp when the competition was saved.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "competitionId",
+        "savedAt"
+      ]
+    },
+    "BlogPost": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Blog Post",
+      "type": "object",
+      "description": "Represents a single blog post article.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the blog post." },
+        "slug": { "type": "string", "description": "URL-friendly slug for the blog post." },
+        "title": { "type": "string", "description": "The title of the blog post." },
+        "excerpt": { "type": "string", "description": "A short summary of the blog post." },
+        "content": { "type": "string", "description": "The full content of the blog post in Markdown or plain text." },
+        "imageUrl": { "type": "string", "description": "URL for the main image of the blog post." },
+        "date": { "type": "string", "format": "date-time", "description": "The publication date of the blog post." },
+        "authorName": { "type": "string", "description": "The name of the post's author." },
+        "authorImageUrl": { "type": "string", "description": "URL for the author's avatar." },
+        "category": { "type": "string", "description": "The primary category of the blog post." },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "A list of tags associated with the post." },
+        "authorId": { "type": "string", "description": "The UID of the user who authored the post." },
+        "views": { "type": "number", "description": "The number of times the blog post has been viewed." }
+      },
+      "required": ["id", "slug", "title", "excerpt", "content", "date", "authorName", "category", "authorId"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous",
+      "google.com"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.  Path-based ownership enables straightforward security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/competitions/{competitionId}",
+        "definition": {
+          "entityName": "Competition",
+          "schema": {
+            "$ref": "#/backend/entities/Competition"
+          },
+          "description": "Stores competition details. Includes 'userId' to denote the owner of the competition for authorization independence.",
+          "params": [
+            {
+              "name": "competitionId",
+              "description": "The unique identifier for the competition."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/submissions/{submissionId}",
+        "definition": {
+          "entityName": "Submission",
+          "schema": {
+            "$ref": "#/backend/entities/Submission"
+          },
+          "description": "Stores user submissions. Includes 'userId' and 'competitionId' for linking to the user and competition, and for authorization independence.",
+          "params": [
+            {
+              "name": "submissionId",
+              "description": "The unique identifier for the submission."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/savedCompetitions/{competitionId}",
+        "definition": {
+          "entityName": "SavedCompetition",
+          "schema": {
+            "$ref": "#/backend/entities/SavedCompetition"
+          },
+          "description": "Stores a user's saved competitions. The path ensures that a user can only access their own saved items.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "competitionId",
+              "description": "The unique identifier for the competition."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/blog/{postId}",
+        "definition": {
+          "entityName": "BlogPost",
+          "schema": {
+            "$ref": "#/backend/entities/BlogPost"
+          },
+          "description": "Stores individual blog post articles. Publicly readable, but writable only by admins.",
+          "params": [
+            {
+              "name": "postId",
+              "description": "The unique identifier for the blog post."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support the ContestOne application, focusing on competitions, user profiles, submissions, and blog posts. It prioritizes authorization independence to ensure secure and scalable operations. User data is stored under `/users/{userId}` for private profile information. Competitions are stored under `/competitions/{competitionId}`, and each competition includes the `userId` of the creator (owner). Submissions are stored under `/submissions/{submissionId}` and contain `userId` and `competitionId` for linking to the respective entities. Blog posts are stored in a top-level `/blog` collection for easy public querying, with write access restricted to admins. This design allows for efficient queries to retrieve a user's submissions or submissions for a specific competition.  The structure supports the required QAPs by segregating user data, competition data, and submission data into separate collections, each with its own security rules. Authorization independence is achieved by including the `userId` within the `Competition` and `Submission` documents, avoiding the need for `get()` calls in security rules to verify ownership.  This denormalization strategy ensures that authorization can be determined directly from the document being accessed, improving performance and security."
+  }
+}
+    
