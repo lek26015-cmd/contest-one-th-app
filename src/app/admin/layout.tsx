@@ -24,15 +24,30 @@ export default function AdminLayout({
 
           // If the user isn't an admin according to claims, try to make them one if they are the first user.
           if (!tokenResult.claims.admin) {
-              const functions = getFunctions();
-              const makeFirstAdmin = httpsCallable(functions, 'makeFirstAdmin');
-              const result = await makeFirstAdmin();
-              const data = result.data as { isAdmin: boolean };
-              if (data.isAdmin) {
-                  setIsAdmin(true);
-                  // Force refresh the token to get the new claim.
-                  await user.getIdToken(true);
+            // const functions = getFunctions();
+            // const makeFirstAdmin = httpsCallable(functions, 'makeFirstAdmin');
+            // const result = await makeFirstAdmin();
+            // const data = result.data as { isAdmin: boolean };
+
+            const token = await user.getIdToken();
+            const response = await fetch('/api/functions/makeFirstAdmin', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({ data: {} }),
+            });
+
+            if (response.ok) {
+              const json = await response.json();
+              const data = json.result as { isAdmin: boolean };
+              if (data && data.isAdmin) {
+                setIsAdmin(true);
+                // Force refresh the token to get the new claim.
+                await user.getIdToken(true);
               }
+            }
           }
         } catch (error) {
           console.error('Error checking admin status:', error);

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { formatDate } from '@/lib/utils';
 import Image from 'next/image';
 
 import { submitCompetition } from '@/app/actions';
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Sparkles, AlertCircle, Plus, Minus } from 'lucide-react';
@@ -34,20 +35,24 @@ const competitionFormSchema = z.object({
   totalPrize: z.coerce.number().min(0, 'รางวัลรวมต้องเป็นค่าบวก').optional(),
   rules: z.string().min(20, 'กติกาต้องมีอย่างน้อย 20 ตัวอักษร'),
   category: z.enum(CATEGORIES),
-  participantType: z.enum(PARTICIPANT_TYPES),
+  participantType: z.array(z.enum(PARTICIPANT_TYPES)).min(1, 'ต้องเลือกประเภทผู้เข้าแข่งขันอย่างน้อย 1 ประเภท'),
   deadline: z.string().refine((val) => val && !isNaN(Date.parse(val)), {
     message: "รูปแบบวันที่ไม่ถูกต้อง",
   }),
   imageUrl: z.string().optional().or(z.literal('')),
   rulesUrls: z.array(z.object({ value: z.string().url({ message: 'กรุณากรอก URL กติกาที่ถูกต้อง' }).optional().or(z.literal('')) })),
   socialUrls: z.array(z.object({ value: z.string().url({ message: 'กรุณากรอก URL โซเชียลที่ถูกต้อง' }).optional().or(z.literal('')) })),
+  featured: z.boolean().optional(),
+  featuredUntil: z.string().optional().refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: "รูปแบบวันที่ไม่ถูกต้อง",
+  }),
 });
 
 type CompetitionFormData = z.infer<typeof competitionFormSchema>;
 
 type CompetitionFormProps = {
-    mode?: 'create' | 'edit';
-    competition?: Competition;
+  mode?: 'create' | 'edit';
+  competition?: Competition;
 }
 
 export default function CompetitionForm({ mode = 'create', competition }: CompetitionFormProps) {
@@ -69,11 +74,13 @@ export default function CompetitionForm({ mode = 'create', competition }: Compet
       totalPrize: competition?.totalPrize || 0,
       rules: competition?.rules || '',
       category: competition?.category,
-      participantType: competition?.participantType,
-      deadline: competition?.deadline ? format(new Date(competition.deadline), 'yyyy-MM-dd') : '',
+      participantType: competition?.participantType || [],
+      deadline: competition?.deadline ? formatDate(competition.deadline, 'yyyy-MM-dd') : '',
       imageUrl: competition?.imageUrl || '',
       rulesUrls: competition?.rulesUrls?.map(url => ({ value: url })) || [{ value: '' }],
       socialUrls: competition?.socialUrls?.map(url => ({ value: url })) || [{ value: '' }],
+      featured: competition?.featured || false,
+      featuredUntil: competition?.featuredUntil ? formatDate(competition.featuredUntil, 'yyyy-MM-dd') : '',
     },
   });
 
@@ -94,18 +101,26 @@ export default function CompetitionForm({ mode = 'create', competition }: Compet
         formData.append('id', competition.id);
       }
       formData.append('mode', mode);
-      
+
       // Append all other data
       Object.entries(data).forEach(([key, value]) => {
-          if (key === 'rulesUrls' || key === 'socialUrls') {
-            (value as {value: string}[]).forEach(item => {
-              if (item.value) formData.append(key, item.value);
-            });
-          } else if (value !== undefined && value !== null) {
-            formData.append(key, String(value));
-          }
+        if (key === 'rulesUrls' || key === 'socialUrls') {
+          (value as { value: string }[]).forEach(item => {
+            if (item.value) formData.append(key, item.value);
+          });
+        } else if (key === 'participantType') {
+          (value as string[]).forEach(type => {
+            formData.append(key, type);
+          });
+        } else if (key === 'featured') {
+          formData.append(key, String(value));
+        } else if (key === 'featuredUntil') {
+          if (value) formData.append(key, String(value));
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
       });
-      
+
       const result = await submitCompetition({ message: '', success: false }, formData);
 
       if (result.success) {
@@ -149,11 +164,11 @@ export default function CompetitionForm({ mode = 'create', competition }: Compet
     };
     reader.readAsDataURL(file);
   };
-  
+
   const handleSourceChange = (source: 'upload' | 'url') => {
-      setImageSource(source);
-      setValue('imageUrl', '', { shouldValidate: true }); // Clear image on source change
-      setImageError(null);
+    setImageSource(source);
+    setValue('imageUrl', '', { shouldValidate: true }); // Clear image on source change
+    setImageError(null);
   }
 
   const imageUrlValue = watch('imageUrl');
@@ -168,179 +183,221 @@ export default function CompetitionForm({ mode = 'create', competition }: Compet
 
 
   return (
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6 rounded-lg border bg-card p-8 shadow-sm">
+    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6 rounded-lg border bg-card p-8 shadow-sm">
+      <div className="space-y-2">
+        <Label htmlFor="title">ชื่อการแข่งขัน</Label>
+        <Input
+          id="title"
+          {...register('title')}
+          placeholder="เช่น, Annual Design Awards"
+          required
+        />
+        {errors.title && <p className="text-sm font-medium text-destructive">{errors.title.message}</p>}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">รายละเอียด</Label>
+        <Textarea
+          id="description"
+          {...register('description')}
+          placeholder="อธิบายรายละเอียดการแข่งขัน..."
+          className="min-h-[120px]"
+          required
+        />
+        {errors.description && <p className="text-sm font-medium text-destructive">{errors.description.message}</p>}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className="space-y-2">
-            <Label htmlFor="title">ชื่อการแข่งขัน</Label>
-            <Input 
-              id="title"
-              {...register('title')}
-              placeholder="เช่น, Annual Design Awards" 
-              required 
-            />
-            {errors.title && <p className="text-sm font-medium text-destructive">{errors.title.message}</p>}
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="description">รายละเอียด</Label>
-            <Textarea 
-              id="description"
-              {...register('description')}
-              placeholder="อธิบายรายละเอียดการแข่งขัน..." 
-              className="min-h-[120px]" 
-              required
-            />
-            {errors.description && <p className="text-sm font-medium text-destructive">{errors.description.message}</p>}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-                <Label htmlFor="prizes">รางวัล (ระบุ 1 อย่างต่อ 1 บรรทัด)</Label>
-                <Textarea id="prizes" {...register('prizes')} placeholder="- เงินรางวัล 10,000 บาท&#10;- ทุนการศึกษา&#10;- ใบประกาศเกียรติคุณ" className="min-h-[100px]" required />
-                {errors.prizes && <p className="text-sm font-medium text-destructive">{errors.prizes.message}</p>}
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="totalPrize">รางวัลรวม (บาท)</Label>
-                <Input id="totalPrize" type="number" {...register('totalPrize')} placeholder="50000" />
-                <p className="text-xs text-muted-foreground">ใส่เฉพาะตัวเลขสำหรับรางวัลที่เป็นเงิน</p>
-                {errors.totalPrize && <p className="text-sm font-medium text-destructive">{errors.totalPrize.message}</p>}
-            </div>
+          <Label htmlFor="prizes">รางวัล (ระบุ 1 อย่างต่อ 1 บรรทัด)</Label>
+          <Textarea id="prizes" {...register('prizes')} placeholder="- เงินรางวัล 10,000 บาท&#10;- ทุนการศึกษา&#10;- ใบประกาศเกียรติคุณ" className="min-h-[100px]" required />
+          {errors.prizes && <p className="text-sm font-medium text-destructive">{errors.prizes.message}</p>}
         </div>
         <div className="space-y-2">
-            <Label htmlFor="rules">กติกา</Label>
-            <Textarea id="rules" {...register('rules')} placeholder="อธิบายกติกาการแข่งขัน..." className="min-h-[120px]" required />
-            {errors.rules && <p className="text-sm font-medium text-destructive">{errors.rules.message}</p>}
+          <Label htmlFor="totalPrize">รางวัลรวม (บาท)</Label>
+          <Input id="totalPrize" type="number" {...register('totalPrize')} placeholder="50000" />
+          <p className="text-xs text-muted-foreground">ใส่เฉพาะตัวเลขสำหรับรางวัลที่เป็นเงิน</p>
+          {errors.totalPrize && <p className="text-sm font-medium text-destructive">{errors.totalPrize.message}</p>}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-                <Label htmlFor="category">หมวดหมู่</Label>
-                 <Controller
-                    name="category"
-                    control={control}
-                    render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value} required>
-                            <SelectTrigger>
-                                <SelectValue placeholder="เลือกหมวดหมู่" />
-                            </SelectTrigger>
-                            <SelectContent>
-                            {CATEGORIES.map(category => (
-                                <SelectItem key={category} value={category}>{category}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                />
-                {errors.category && <p className="text-sm font-medium text-destructive">{errors.category.message}</p>}
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="participantType">ประเภทผู้เข้าแข่งขัน</Label>
-                <Controller
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="rules">กติกา</Label>
+        <Textarea id="rules" {...register('rules')} placeholder="อธิบายกติกาการแข่งขัน..." className="min-h-[120px]" required />
+        {errors.rules && <p className="text-sm font-medium text-destructive">{errors.rules.message}</p>}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="category">หมวดหมู่</Label>
+          <Controller
+            name="category"
+            control={control}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกหมวดหมู่" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.category && <p className="text-sm font-medium text-destructive">{errors.category.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <div className="space-y-3">
+            <Label>ประเภทผู้เข้าแข่งขัน</Label>
+            <div className="grid grid-cols-2 gap-4">
+              {PARTICIPANT_TYPES.map((type) => (
+                <div key={type} className="flex items-center space-x-2">
+                  <Controller
                     name="participantType"
                     control={control}
-                    render={({ field }) => (
-                        <Select onValueChange={field.onChange} defaultValue={field.value} required>
-                            <SelectTrigger>
-                                <SelectValue placeholder="เลือกประเภท" />
-                            </SelectTrigger>
-                            <SelectContent>
-                            {PARTICIPANT_TYPES.map(type => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                            </SelectContent>
-                        </Select>
-                    )}
-                />
-                {errors.participantType && <p className="text-sm font-medium text-destructive">{errors.participantType.message}</p>}
-            </div>
-        </div>
-         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-                <Label htmlFor="deadline">วันสิ้นสุด</Label>
-                <Input id="deadline" {...register('deadline')} type="date" required />
-                {errors.deadline && <p className="text-sm font-medium text-destructive">{errors.deadline.message}</p>}
-            </div>
-        </div>
-        <div className="space-y-4 pt-4 border-t">
-            <h3 className="text-lg font-medium">รายละเอียดเพิ่มเติม (ถ้ามี)</h3>
-            <div className="space-y-2">
-                <Label>โปสเตอร์การแข่งขัน</Label>
-                <RadioGroup value={imageSource} onValueChange={handleSourceChange} className="flex gap-4">
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="upload" id="r_upload_comp" />
-                        <Label htmlFor="r_upload_comp">อัปโหลดไฟล์</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="url" id="r_url_comp" />
-                        <Label htmlFor="r_url_comp">ใช้ URL</Label>
-                    </div>
-                </RadioGroup>
-                
-                {imageSource === 'upload' ? (
-                    <div className="space-y-2">
-                        <Input id="imageUpload" type="file" accept={ACCEPTED_IMAGE_TYPES.join(',')} onChange={handleImageUpload} />
-                        <p className="text-xs text-muted-foreground">ขนาดไม่เกิน 2MB, แนะนำสัดส่วน 3:4 (เช่น 600x800px)</p>
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        <Input 
-                            id="imageUrlInput"
-                            type="url" 
-                            placeholder="https://example.com/image.jpg"
-                            {...register('imageUrl')}
+                    render={({ field }) => {
+                      return (
+                        <Checkbox
+                          id={`participant-${type}`}
+                          checked={field.value?.includes(type)}
+                          onCheckedChange={(checked) => {
+                            const current = field.value || [];
+                            if (checked) {
+                              field.onChange([...current, type]);
+                            } else {
+                              field.onChange(current.filter((val) => val !== type));
+                            }
+                          }}
                         />
-                    </div>
-                )}
-            
-                <input type="hidden" {...register('imageUrl')} />
-                {errors.imageUrl && <p className="text-sm font-medium text-destructive">{errors.imageUrl.message}</p>}
-                {imageError && <p className="text-sm font-medium text-destructive">{imageError}</p>}
-
-                {imagePreview && (
-                <div className="mt-4 relative w-full max-w-xs aspect-[3/4] rounded-md overflow-hidden border">
-                    <Image src={imagePreview} alt="ตัวอย่างรูปภาพ" fill className="object-cover" />
-                </div>
-                )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label>URL กติกา</Label>
-              {rulesFields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                  <Input
-                    {...register(`rulesUrls.${index}.value`)}
-                    placeholder="https://example.com/rules.pdf"
+                      );
+                    }}
                   />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeRule(index)} disabled={rulesFields.length <= 1}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => appendRule({ value: '' })}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  <Label htmlFor={`participant-${type}`} className="font-normal cursor-pointer">
+                    {type}
+                  </Label>
                 </div>
               ))}
-              {errors.rulesUrls && <p className="text-sm font-medium text-destructive">{errors.rulesUrls.message || errors.rulesUrls.root?.message || (errors.rulesUrls[0] as any)?.value?.message}</p>}
             </div>
-
-            <div className="space-y-2">
-              <Label>URL โซเชียล/ประกาศ</Label>
-              {socialFields.map((field, index) => (
-                 <div key={field.id} className="flex items-center gap-2">
-                  <Input
-                    {...register(`socialUrls.${index}.value`)}
-                    placeholder="https://twitter.com/..."
-                  />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeSocial(index)} disabled={socialFields.length <= 1}>
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => appendSocial({ value: '' })}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-               {errors.socialUrls && <p className="text-sm font-medium text-destructive">{errors.socialUrls.message || errors.socialUrls.root?.message || (errors.socialUrls[0] as any)?.value?.message}</p>}
-            </div>
+            {errors.participantType && <p className="text-sm font-medium text-destructive">{errors.participantType.message}</p>}
+          </div>
         </div>
-        <Button type="submit" disabled={isPending} className="w-full">
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {mode === 'edit' ? 'บันทึกการเปลี่ยนแปลง' : 'ส่งการแข่งขัน'}
-        </Button>
-      </form>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="space-y-2">
+          <Label htmlFor="deadline">วันสิ้นสุด</Label>
+          <Input id="deadline" {...register('deadline')} type="date" required />
+          {errors.deadline && <p className="text-sm font-medium text-destructive">{errors.deadline.message}</p>}
+        </div>
+        <div className="flex flex-col justify-end pb-2 space-y-4">
+          <div className="flex items-center space-x-2">
+            <Controller
+              name="featured"
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  id="featured"
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
+            />
+            <Label htmlFor="featured" className="font-medium cursor-pointer">
+              รายการแนะนำ / ผู้สนับสนุน (Featured)
+            </Label>
+          </div>
+
+          {watch('featured') && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+              <Label htmlFor="featuredUntil">สิ้นสุดการโปรโมทวันที่</Label>
+              <Input id="featuredUntil" {...register('featuredUntil')} type="date" />
+              <p className="text-xs text-muted-foreground">หากไม่ระบุ จะแสดงตลอดไป</p>
+              {errors.featuredUntil && <p className="text-sm font-medium text-destructive">{errors.featuredUntil.message}</p>}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="space-y-4 pt-4 border-t">
+        <h3 className="text-lg font-medium">รายละเอียดเพิ่มเติม (ถ้ามี)</h3>
+        <div className="space-y-2">
+          <Label>โปสเตอร์การแข่งขัน</Label>
+          <RadioGroup value={imageSource} onValueChange={handleSourceChange} className="flex gap-4">
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="upload" id="r_upload_comp" />
+              <Label htmlFor="r_upload_comp">อัปโหลดไฟล์</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="url" id="r_url_comp" />
+              <Label htmlFor="r_url_comp">ใช้ URL</Label>
+            </div>
+          </RadioGroup>
+
+          {imageSource === 'upload' ? (
+            <div className="space-y-2">
+              <Input id="imageUpload" type="file" accept={ACCEPTED_IMAGE_TYPES.join(',')} onChange={handleImageUpload} />
+              <p className="text-xs text-muted-foreground">ขนาดไม่เกิน 2MB, แนะนำสัดส่วน 3:4 (เช่น 600x800px)</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Input
+                id="imageUrlInput"
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                {...register('imageUrl')}
+              />
+            </div>
+          )}
+
+          <input type="hidden" {...register('imageUrl')} />
+          {errors.imageUrl && <p className="text-sm font-medium text-destructive">{errors.imageUrl.message}</p>}
+          {imageError && <p className="text-sm font-medium text-destructive">{imageError}</p>}
+
+          {imagePreview && (
+            <div className="mt-4 relative w-full max-w-xs aspect-[3/4] rounded-md overflow-hidden border">
+              <Image src={imagePreview} alt="ตัวอย่างรูปภาพ" fill className="object-cover" />
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>URL กติกา</Label>
+          {rulesFields.map((field, index) => (
+            <div key={field.id} className="flex items-center gap-2">
+              <Input
+                {...register(`rulesUrls.${index}.value`)}
+                placeholder="https://example.com/rules.pdf"
+              />
+              <Button type="button" variant="ghost" size="icon" onClick={() => removeRule(index)} disabled={rulesFields.length <= 1}>
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Button type="button" variant="ghost" size="icon" onClick={() => appendRule({ value: '' })}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {errors.rulesUrls && <p className="text-sm font-medium text-destructive">{errors.rulesUrls.message || errors.rulesUrls.root?.message || (errors.rulesUrls[0] as any)?.value?.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label>URL โซเชียล/ประกาศ</Label>
+          {socialFields.map((field, index) => (
+            <div key={field.id} className="flex items-center gap-2">
+              <Input
+                {...register(`socialUrls.${index}.value`)}
+                placeholder="https://twitter.com/..."
+              />
+              <Button type="button" variant="ghost" size="icon" onClick={() => removeSocial(index)} disabled={socialFields.length <= 1}>
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Button type="button" variant="ghost" size="icon" onClick={() => appendSocial({ value: '' })}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {errors.socialUrls && <p className="text-sm font-medium text-destructive">{errors.socialUrls.message || errors.socialUrls.root?.message || (errors.socialUrls[0] as any)?.value?.message}</p>}
+        </div>
+      </div>
+      <Button type="submit" disabled={isPending} className="w-full">
+        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {mode === 'edit' ? 'บันทึกการเปลี่ยนแปลง' : 'ส่งการแข่งขัน'}
+      </Button>
+    </form>
   );
 }

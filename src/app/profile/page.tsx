@@ -20,6 +20,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { th } from 'date-fns/locale';
+import { formatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Timestamp } from 'firebase/firestore';
 
@@ -43,10 +44,10 @@ export default function ProfilePage() {
 
   const submissionHistory = useMemo(() => {
     if (!submissions || !allCompetitions) return [];
-    
+
     const processedSubmissions = submissions.map(sub => {
       const competition = allCompetitions.find(c => c.id === sub.competitionId);
-      
+
       let submissionDate: Date;
       if (sub.submissionDate instanceof Timestamp) {
         submissionDate = sub.submissionDate.toDate();
@@ -76,10 +77,10 @@ export default function ProfilePage() {
   const { data: savedCompetitionRefs, isLoading: isLoadingSaved } = useCollection<SavedCompetition>(savedCompetitionsQuery);
 
   const savedCompetitions = useMemo(() => {
-      if (!savedCompetitionRefs || !allCompetitions) return [];
-      return savedCompetitionRefs
-          .map(ref => allCompetitions.find(c => c.id === ref.competitionId))
-          .filter((c): c is Competition => c !== undefined);
+    if (!savedCompetitionRefs || !allCompetitions) return [];
+    return savedCompetitionRefs
+      .map(ref => allCompetitions.find(c => c.id === ref.competitionId))
+      .filter((c): c is Competition => c !== undefined);
   }, [savedCompetitionRefs, allCompetitions]);
 
 
@@ -124,19 +125,19 @@ export default function ProfilePage() {
           </h1>
           <p className="text-muted-foreground">{!user.isAnonymous && user.email}</p>
           <div className="mt-4 flex justify-center gap-2 sm:justify-start">
-             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="outline">
-                      <User className="mr-2" />
-                      แก้ไขโปรไฟล์
-                    </Button>
-                </SheetTrigger>
-                <SheetContent>
-                    <SheetHeader>
-                        <SheetTitle>แก้ไขโปรไฟล์</SheetTitle>
-                    </SheetHeader>
-                    <ProfileEditForm user={user} onSave={() => setIsSheetOpen(false)} />
-                </SheetContent>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <User className="mr-2" />
+                  แก้ไขโปรไฟล์
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>แก้ไขโปรไฟล์</SheetTitle>
+                </SheetHeader>
+                <ProfileEditForm user={user} onSave={() => setIsSheetOpen(false)} />
+              </SheetContent>
             </Sheet>
 
             <Button variant="ghost" onClick={handleSignOut}>
@@ -165,40 +166,40 @@ export default function ProfilePage() {
               <CardDescription>การแข่งขันที่คุณสนใจและบันทึกไว้เพื่อดูในภายหลัง</CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoadingSaved || isLoadingAllCompetitions ? (
-                     <div className="space-y-4">
-                        {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-                    </div>
-                ) : savedCompetitions.length > 0 ? (
-                    <div className="space-y-4">
-                        {savedCompetitions.map(comp => (
-                           <Link href={`/competitions/${comp.id}`} key={comp.id} className="block group">
-                                <div className="p-4 border rounded-lg flex items-start gap-4 hover:bg-muted/50 transition-colors">
-                                    <div className="relative w-16 h-20 rounded-md overflow-hidden flex-shrink-0 bg-muted">
-                                        {comp.imageUrl ? (
-                                            <Image src={comp.imageUrl} alt={comp.title} fill className="object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full bg-muted"></div>
-                                        )}
-                                    </div>
-                                    <div className="flex-grow">
-                                        <p className="font-semibold group-hover:text-primary">{comp.title}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            ปิดรับสมัคร: {format(new Date(comp.deadline), 'd MMMM yyyy', { locale: th })}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex h-60 items-center justify-center text-center">
-                        <div className="text-muted-foreground">
-                            <p className="font-semibold">ยังไม่มีการแข่งขันที่บันทึกไว้</p>
-                            <p className="text-sm">คุณสามารถบันทึกการแข่งขันที่สนใจได้โดยกดปุ่ม "บันทึก"</p>
+              {isLoadingSaved || isLoadingAllCompetitions ? (
+                <div className="space-y-4">
+                  {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+                </div>
+              ) : savedCompetitions.length > 0 ? (
+                <div className="space-y-4">
+                  {savedCompetitions.map(comp => (
+                    <Link href={`/competitions/${comp.id}`} key={comp.id} className="block group">
+                      <div className="p-4 border rounded-lg flex items-start gap-4 hover:bg-muted/50 transition-colors">
+                        <div className="relative w-16 h-20 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+                          {comp.imageUrl ? (
+                            <Image src={comp.imageUrl} alt={comp.title} fill className="object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-muted"></div>
+                          )}
                         </div>
-                    </div>
-                )}
+                        <div className="flex-grow">
+                          <p className="font-semibold group-hover:text-primary">{comp.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            ปิดรับสมัคร: {formatDate(comp.deadline, 'd MMMM yyyy')}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-60 items-center justify-center text-center">
+                  <div className="text-muted-foreground">
+                    <p className="font-semibold">ยังไม่มีการแข่งขันที่บันทึกไว้</p>
+                    <p className="text-sm">คุณสามารถบันทึกการแข่งขันที่สนใจได้โดยกดปุ่ม "บันทึก"</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -208,41 +209,41 @@ export default function ProfilePage() {
               <CardTitle>ประวัติการส่งผลงาน</CardTitle>
               <CardDescription>รายการผลงานที่คุณเคยส่งเข้าประกวด</CardDescription>
             </CardHeader>
-             <CardContent>
-                {isLoadingSubmissions || isLoadingAllCompetitions ? (
-                    <div className="space-y-4">
-                        {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
-                    </div>
-                ) : submissionHistory.length > 0 ? (
-                    <div className="space-y-4">
-                        {submissionHistory.map(sub => (
-                            <Link href={`/competitions/${sub.competitionId}`} key={sub.id} className="block group">
-                                <div className="p-4 border rounded-lg flex items-start gap-4 hover:bg-muted/50 transition-colors">
-                                    <div className="relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-muted">
-                                        {sub.competitionImageUrl ? (
-                                            <Image src={sub.competitionImageUrl} alt={sub.competitionTitle} fill className="object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full bg-muted"></div>
-                                        )}
-                                    </div>
-                                    <div className="flex-grow">
-                                        <p className="font-semibold group-hover:text-primary">{sub.competitionTitle}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            ส่งเมื่อ: {format(sub.submissionDate, 'd MMMM yyyy, HH:mm', { locale: th })}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="flex h-60 items-center justify-center text-center">
-                        <div className="text-muted-foreground">
-                            <p className="font-semibold">ยังไม่มีประวัติการส่งผลงาน</p>
-                            <p className="text-sm">คุณยังไม่เคยส่งใบสมัครเข้าร่วมการแข่งขันใดๆ</p>
+            <CardContent>
+              {isLoadingSubmissions || isLoadingAllCompetitions ? (
+                <div className="space-y-4">
+                  {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+                </div>
+              ) : submissionHistory.length > 0 ? (
+                <div className="space-y-4">
+                  {submissionHistory.map(sub => (
+                    <Link href={`/competitions/${sub.competitionId}`} key={sub.id} className="block group">
+                      <div className="p-4 border rounded-lg flex items-start gap-4 hover:bg-muted/50 transition-colors">
+                        <div className="relative w-16 h-16 rounded-md overflow-hidden flex-shrink-0 bg-muted">
+                          {sub.competitionImageUrl ? (
+                            <Image src={sub.competitionImageUrl} alt={sub.competitionTitle} fill className="object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-muted"></div>
+                          )}
                         </div>
-                    </div>
-                )}
+                        <div className="flex-grow">
+                          <p className="font-semibold group-hover:text-primary">{sub.competitionTitle}</p>
+                          <p className="text-sm text-muted-foreground">
+                            ส่งเมื่อ: {format(sub.submissionDate, 'd MMMM yyyy, HH:mm', { locale: th })}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex h-60 items-center justify-center text-center">
+                  <div className="text-muted-foreground">
+                    <p className="font-semibold">ยังไม่มีประวัติการส่งผลงาน</p>
+                    <p className="text-sm">คุณยังไม่เคยส่งใบสมัครเข้าร่วมการแข่งขันใดๆ</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

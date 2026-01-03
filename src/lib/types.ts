@@ -3,7 +3,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { Timestamp } from 'firebase/firestore';
 
-export const CATEGORIES = ['Business Plan', 'Pitching', 'Hackathon', 'Incubation', 'Accelerator', 'Technology', 'Innovation'] as const;
+export const CATEGORIES = ['Business Plan', 'Pitching', 'Hackathon', 'Incubation', 'Accelerator', 'Technology', 'Innovation', 'Design', 'Film', 'Photography', 'Art', 'Music'] as const;
 export const PARTICIPANT_TYPES = ['นักเรียน/นักศึกษา', 'บุคคลทั่วไป', 'Early Stage Startup', 'Pre-Seed/Seed', 'SME', 'Corporate'] as const;
 export const PRIZE_RANGES = [10000, 50000, 100000, 500000] as const;
 export const BLOG_CATEGORIES = ['ออกแบบ', 'พัฒนา', 'งานเขียน', 'เคล็ดลับ'] as const;
@@ -22,13 +22,15 @@ export type Competition = {
   rules: string;
   deadline: string; // ISO string for easier serialization
   category: CompetitionCategory;
-  participantType: ParticipantType;
+  participantType: ParticipantType[];
   rulesUrls: string[];
   socialUrls: string[];
   imageUrl?: string;
   views: number;
   featured?: boolean;
   isSaved?: boolean; // Add this field
+  featuredUntil?: string; // ISO Date string
+  featuredViews?: number;
 };
 
 export type SavedCompetition = {
@@ -43,13 +45,15 @@ export type BlogPost = {
   excerpt: string;
   content: string;
   imageUrl: string;
-  date: string; // ISO String
+  date: string | Timestamp; // ISO String or Firestore Timestamp
   authorName: string;
   authorImageUrl: string;
   authorId: string;
   category: BlogCategory;
   tags: string[];
   views: number;
+  metaTitle?: string;
+  metaDescription?: string;
 };
 
 export type Submission = {

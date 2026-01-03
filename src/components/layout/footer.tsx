@@ -34,7 +34,7 @@ export default function Footer() {
                         </Link>
                         <div className="text-primary-foreground/80 text-sm space-y-2">
                             <p>แพลตฟอร์มประกวดอันดับหนึ่งของประเทศไทย ที่จะช่วยให้คุณค้นพบโอกาสใหม่ๆ และท้าทายความสามารถของคุณ</p>
-                             <div className="flex items-center gap-3 pt-2">
+                            <div className="flex items-center gap-3 pt-2">
                                 <Phone className="h-4 w-4 flex-shrink-0" />
                                 <span>02-853-6999</span>
                             </div>
@@ -46,7 +46,7 @@ export default function Footer() {
                             <SocialLink href="https://twitter.com" icon={Twitter} />
                             <SocialLink href="https://instagram.com" icon={Instagram} />
                         </div>
-                       
+
                     </div>
 
                     {/* Column 2: For Seekers */}
@@ -63,13 +63,12 @@ export default function Footer() {
                     <div className="md:col-span-2">
                         <FooterHeader>สำหรับผู้จัด</FooterHeader>
                         <ul className="space-y-3">
-                            <li><FooterLink href="/admin">ภาพรวมผู้จัด</FooterLink></li>
-                            <li><FooterLink href="/admin/competitions/new">สร้างการแข่งขัน</FooterLink></li>
+
                             <li><FooterLink href="/#">ราคา</FooterLink></li>
                         </ul>
                     </div>
 
-                     {/* Column 4: About & Terms */}
+                    {/* Column 4: About & Terms */}
                     <div className="md:col-span-2">
                         <FooterHeader>เกี่ยวกับเรา</FooterHeader>
                         <ul className="space-y-3">
@@ -82,9 +81,9 @@ export default function Footer() {
                 </div>
             </div>
             <div className="bg-black/20">
-                 <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center text-xs text-primary-foreground/60 py-4 gap-4">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center text-xs text-primary-foreground/60 py-4 gap-4">
                     <p>&copy; {currentYear} ContestOne<sup>th</sup>, Inc. All Rights Reserved.</p>
-                     <div className="flex gap-4">
+                    <div className="flex gap-4">
                         <FooterLink href="/terms">เงื่อนไขการให้บริการ</FooterLink>
                         <FooterLink href="/privacy">นโยบายความเป็นส่วนตัว</FooterLink>
                     </div>

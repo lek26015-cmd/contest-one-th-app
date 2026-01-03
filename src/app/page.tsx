@@ -2,6 +2,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import BlogSection from '@/components/blog-section';
 import CompetitionBrowserV2 from '@/components/competition-browser-v2';
 import type { Competition, CompetitionCategory, ParticipantType, PrizeRange, BlogPost } from '@/lib/types';
 import { CATEGORIES, PARTICIPANT_TYPES, PRIZE_RANGES } from '@/lib/types';
@@ -23,6 +25,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { getSavedCompetitionStatus } from '@/lib/user-actions';
+import { formatDate } from '@/lib/utils';
 
 
 type SortOrder = 'deadline-soonest' | 'deadline-latest' | 'newest';
@@ -101,7 +104,7 @@ export default function Home() {
       filtered = filtered.filter(c => c.category === activeFilters.category);
     }
     if (activeFilters.participantType !== 'all') {
-      filtered = filtered.filter(c => c.participantType === activeFilters.participantType);
+      filtered = filtered.filter(c => Array.isArray(c.participantType) ? c.participantType.includes(activeFilters.participantType as ParticipantType) : c.participantType === activeFilters.participantType);
     }
     if (activeFilters.prize !== 'all') {
       filtered = filtered.filter(c => c.totalPrize >= parseInt(activeFilters.prize));
@@ -144,17 +147,7 @@ export default function Home() {
 
   const filterControls = (
     <div className='flex flex-col lg:flex-row gap-2'>
-      <div className="relative flex-grow">
-        <Input
-          placeholder="ค้นหาชื่อการแข่งขัน..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 w-full"
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-        />
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 flex-grow">
         <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value as CompetitionCategory | 'all')}>
           <SelectTrigger>
             <SelectValue placeholder="หมวดหมู่งาน" />
@@ -201,7 +194,7 @@ export default function Home() {
           </SelectContent>
         </Select>
       </div>
-      <Button onClick={handleSearch} className="w-full lg:w-auto">
+      <Button onClick={handleSearch} className="w-full lg:w-auto px-8">
         <Search className="mr-2 h-4 w-4" />
         ค้นหา
       </Button>
@@ -275,27 +268,60 @@ export default function Home() {
 
   return (
     <>
-      <section className="relative bg-muted/20 pb-12 pt-12">
-        <div className="absolute inset-0 hidden md:block">
-          <Image
-            src="https://picsum.photos/seed/hero-trophy/1920/1080"
-            alt="glowing trophy"
-            fill
-            className="object-cover"
-            data-ai-hint="glowing trophy dark background"
-            priority
-          />
-          <div className="absolute inset-0 bg-black/60" />
-        </div>
-
+      <section className="relative bg-[#020617] pb-12 pt-12 md:pb-32 overflow-hidden">
         <div className="container relative mx-auto px-4">
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl font-extrabold tracking-tight text-primary md:text-white md:drop-shadow-lg font-headline sm:text-5xl">
-              เปลี่ยนไอเดียให้เป็นธุรกิจจริง
-            </h1>
-            <p className="mt-4 max-w-2xl mx-auto text-lg text-foreground/80 md:text-white/90 md:drop-shadow-sm">
-              รวมเวทีประกวด Startup, Hackathon และแหล่งเงินทุนสำหรับผู้ประกอบการรุ่นใหม่ ค้นหาโอกาสเติบโตทางธุรกิจของคุณได้ที่นี่
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
+              className="text-left z-10"
+            >
+              <h1 className="text-4xl font-extrabold tracking-tight text-white md:drop-shadow-lg font-headline sm:text-5xl mb-6 leading-tight">
+                รวมทุกเวทีประกวด<br />
+                <span className="text-primary-foreground/90">เพื่อคนมีของ</span>
+              </h1>
+              <p className="max-w-lg text-lg text-white/80 md:drop-shadow-sm mb-8 leading-relaxed">
+                ไม่ว่าจะเป็น Startup, Hackathon, ออกแบบ, ถ่ายภาพ, หรือดนตรี ค้นหาโอกาสแสดงศักยภาพและเติบโตในเส้นทางของคุณได้ที่นี่
+              </p>
+
+              {/* Search Bar integrated into Hero for Desktop */}
+              <div className="hidden md:block max-w-md">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    placeholder="คุณอยากพัฒนาทักษะอะไร?"
+                    className="pl-10 h-12 rounded-full bg-white/10 border-white/20 text-white placeholder:text-white/50 focus-visible:ring-white/30"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                  <Button
+                    className="absolute right-1 top-1 bottom-1 rounded-full px-6"
+                    onClick={handleSearch}
+                  >
+                    ค้นหา
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="relative h-[300px] md:h-[400px] w-full flex items-center justify-center"
+            >
+              <div className="relative w-full h-full max-w-md">
+                <Image
+                  src="/hero_competition_graphic_1765619144232.png"
+                  alt="Competition Graphic"
+                  fill
+                  className="object-contain drop-shadow-2xl mix-blend-lighten"
+                  priority
+                />
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -355,65 +381,11 @@ export default function Home() {
         )}
       </section>
 
-      <div id="competitions" className="container mx-auto px-4">
-        <CompetitionBrowserV2 competitions={filteredAndSortedCompetitions} isLoading={isLoading || isSavedStatusLoading} />
+      <div id="competitions" className="container mx-auto px-4 mt-12">
+        <CompetitionBrowserV2 competitions={filteredAndSortedCompetitions} isLoading={isLoading} />
       </div>
 
-      <section className="py-12 md:py-20 bg-primary/5 mt-12">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold tracking-tight text-primary font-headline">
-              บทความล่าสุด
-            </h2>
-            <Button variant="ghost" asChild>
-              <Link href="/blog">
-                ดูทั้งหมด <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {latestPosts?.slice(0, 3).map((post) => (
-              <Card key={post.id} className="flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-card">
-                <Link href={`/blog/${post.slug}`} className="block">
-                  <div className="relative h-40 w-full">
-                    <Image
-                      src={post.imageUrl}
-                      alt={post.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    />
-                  </div>
-                </Link>
-                <CardHeader className="p-4">
-                  <CardTitle className="leading-tight text-base font-bold">
-                    <Link href={`/blog/${post.slug}`} className="hover:text-primary transition-colors">
-                      {post.title}
-                    </Link>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow p-4 pt-0">
-                  <CardDescription className="line-clamp-2 text-xs">{post.excerpt}</CardDescription>
-                </CardContent>
-                <CardFooter className="p-4 pt-0">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={post.authorImageUrl} alt={post.authorName} />
-                      <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{post.authorName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(post.date), 'd MMM yy', { locale: th })}
-                      </p>
-                    </div>
-                  </div>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      <BlogSection posts={latestPosts || []} />
     </>
   );
 }

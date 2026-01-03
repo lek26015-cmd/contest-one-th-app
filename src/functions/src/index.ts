@@ -2,11 +2,11 @@
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 
 initializeApp();
 
-export const makeFirstAdmin = onCall({ cors: true }, async (request) => {
+export const makeFirstAdmin = onCall({ cors: true }, async (request: CallableRequest) => {
     const uid = request.auth?.uid;
     if (!uid) {
         // Not authenticated, return immediately.
@@ -47,7 +47,7 @@ export const makeFirstAdmin = onCall({ cors: true }, async (request) => {
     return { isAdmin: false, message: "User is not the first user, cannot be promoted to admin." };
 });
 
-export const listUsers = onCall({ cors: true }, async (request) => {
+export const listUsers = onCall({ cors: true }, async (request: CallableRequest) => {
     const callerUid = request.auth?.uid;
     if (!callerUid) {
         throw new HttpsError('unauthenticated', 'The function must be called while authenticated.');
@@ -83,7 +83,7 @@ export const listUsers = onCall({ cors: true }, async (request) => {
 });
 
 
-export const deleteUser = onCall({ cors: true }, async (request) => {
+export const deleteUser = onCall({ cors: true }, async (request: CallableRequest) => {
     const callerUid = request.auth?.uid;
     const targetUids = request.data.uids; // Expecting an array of uids
 
@@ -137,7 +137,7 @@ export const deleteUser = onCall({ cors: true }, async (request) => {
 });
 
 
-export const toggleAdminRole = onCall({ cors: true }, async (request) => {
+export const toggleAdminRole = onCall({ cors: true }, async (request: CallableRequest) => {
     const callerUid = request.auth?.uid;
     const { uid: targetUid, isAdmin } = request.data;
 

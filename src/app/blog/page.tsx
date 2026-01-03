@@ -7,6 +7,7 @@ import { BLOG_CATEGORIES, BlogCategory, BlogPost } from '@/lib/types';
 import { getBlogPostsQuery } from '@/lib/blog-actions';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Search } from 'lucide-react';
 import { format } from 'date-fns';
@@ -28,9 +29,9 @@ export default function BlogPage() {
     if (!allPosts) return [];
     return allPosts.filter(post => {
       const matchesCategory = categoryFilter === 'all' || post.category === categoryFilter;
-      const matchesSearch = searchTerm.trim() === '' || 
-                            post.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = searchTerm.trim() === '' ||
+        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
   }, [allPosts, searchTerm, categoryFilter]);
@@ -85,14 +86,14 @@ export default function BlogPage() {
                 <Skeleton className="h-4 w-full mt-2" />
               </CardContent>
               <CardFooter className="flex justify-between items-center">
-                 <div className="flex items-center gap-3">
-                      <Skeleton className="h-9 w-9 rounded-full" />
-                      <div className="space-y-2">
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-3 w-20" />
-                      </div>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-20" />
                   </div>
-                  <Skeleton className="h-8 w-24" />
+                </div>
+                <Skeleton className="h-8 w-24" />
               </CardFooter>
             </Card>
           ))}
@@ -123,23 +124,23 @@ export default function BlogPage() {
                 <CardDescription className="line-clamp-3">{post.excerpt}</CardDescription>
               </CardContent>
               <CardFooter className="flex justify-between items-center">
-                 <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                          <AvatarImage src={post.authorImageUrl} alt={post.authorName} />
-                          <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                          <p className="text-sm font-medium">{post.authorName}</p>
-                          <p className="text-xs text-muted-foreground">
-                              {format(new Date(post.date), 'd MMMM yyyy', { locale: th })}
-                          </p>
-                      </div>
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={post.authorImageUrl} alt={post.authorName} />
+                    <AvatarFallback>{post.authorName.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium">{post.authorName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(post.date, 'd MMMM yyyy')}
+                    </p>
                   </div>
-                  <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/blog/${post.slug}`}>
-                          อ่านต่อ <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                  </Button>
+                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href={`/blog/${post.slug}`}>
+                    อ่านต่อ <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
               </CardFooter>
             </Card>
           ))}
@@ -153,4 +154,3 @@ export default function BlogPage() {
     </div>
   );
 }
-    

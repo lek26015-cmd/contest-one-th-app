@@ -56,17 +56,17 @@ const StatisticsCard = ({ competitions, blogPosts }: { competitions: Competition
                     <p className="text-4xl font-bold text-primary">{totalViews.toLocaleString()}</p>
                     <p className="text-muted-foreground">ยอดการเข้าชมการแข่งขันทั้งหมด</p>
                 </div>
-                 <div>
+                <div>
                     <h3 className="font-bold text-lg mb-4">สถิติการเข้าชมรายเดือน (12 เดือนย้อนหลัง)</h3>
-                     <div className="h-[300px]">
+                    <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
-                           <LineChart data={monthlyTrafficData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                               <CartesianGrid strokeDasharray="3 3" />
-                               <XAxis dataKey="month" />
-                               <YAxis />
-                               <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}/>
-                               <Line type="monotone" dataKey="views" name="ยอดวิว" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--primary))" }} activeDot={{ r: 8 }} />
-                           </LineChart>
+                            <LineChart data={monthlyTrafficData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" />
+                                <YAxis />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }} />
+                                <Line type="monotone" dataKey="views" name="ยอดวิว" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--primary))" }} activeDot={{ r: 8 }} />
+                            </LineChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
@@ -85,8 +85,8 @@ const StatisticsCard = ({ competitions, blogPosts }: { competitions: Competition
                         </ResponsiveContainer>
                     </div>
                 </div>
-                
-                 <div>
+
+                <div>
                     <h3 className="font-bold text-lg mb-4">10 อันดับบทความยอดนิยม</h3>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -94,7 +94,7 @@ const StatisticsCard = ({ competitions, blogPosts }: { competitions: Competition
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" />
                                 <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
-                                <Tooltip cursor={{ fill: 'hsl(var(--muted))' }}/>
+                                <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
                                 <Bar dataKey="ยอดวิว" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -106,26 +106,60 @@ const StatisticsCard = ({ competitions, blogPosts }: { competitions: Competition
     )
 }
 
-export default function AdminDashboardPage() {
-  const firestore = useFirestore();
-  const competitionsQuery = useMemoFirebase(() => getCompetitionsQuery(firestore), [firestore]);
-  const { data: competitions } = useCollection<Competition>(competitionsQuery);
-  
-  const blogPostsQuery = useMemoFirebase(() => getBlogPostsQuery(firestore), [firestore]);
-  const { data: blogPosts } = useCollection<BlogPost>(blogPostsQuery);
+import { Button } from '@/components/ui/button';
+import { Database, Loader2 } from 'lucide-react';
+import { seedInitialCompetitions } from '@/lib/competition-actions';
+import { seedInitialBlogPosts } from '@/lib/blog-actions';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
-  return (
-    <div className="space-y-8">
-        <div className="flex justify-between items-center">
-            <div>
-                 <h1 className="text-3xl font-bold font-headline">ภาพรวม</h1>
-                 <p className="text-muted-foreground">สรุปข้อมูลสถิติที่สำคัญของเว็บไซต์</p>
+// ... (existing imports)
+
+import { useUser } from '@/firebase';
+
+export default function AdminDashboardPage() {
+    const firestore = useFirestore();
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [isSeeding, setIsSeeding] = useState(false);
+
+    const competitionsQuery = useMemoFirebase(() => getCompetitionsQuery(firestore), [firestore]);
+    const { data: competitions } = useCollection<Competition>(competitionsQuery);
+
+    const blogPostsQuery = useMemoFirebase(() => getBlogPostsQuery(firestore), [firestore]);
+    const { data: blogPosts } = useCollection<BlogPost>(blogPostsQuery);
+
+    const handleSeedData = async () => {
+        if (!firestore || !user) return;
+        setIsSeeding(true);
+        try {
+            await seedInitialCompetitions(firestore, user.uid);
+            await seedInitialBlogPosts(firestore);
+            toast({ title: "สำเร็จ", description: "เพิ่มข้อมูลจำลองเรียบร้อยแล้ว" });
+        } catch (error) {
+            console.error(error);
+            toast({ title: "ผิดพลาด", description: "ไม่สามารถเพิ่มข้อมูลได้", variant: "destructive" });
+        } finally {
+            setIsSeeding(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold font-headline">ภาพรวม</h1>
+                    <p className="text-muted-foreground">สรุปข้อมูลสถิติที่สำคัญของเว็บไซต์</p>
+                </div>
+                <Button onClick={handleSeedData} disabled={isSeeding} variant="outline">
+                    {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                    Seed Data
+                </Button>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                <StatisticsCard competitions={competitions || []} blogPosts={blogPosts || []} />
+                {/* You can add other summary cards here */}
             </div>
         </div>
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <StatisticsCard competitions={competitions || []} blogPosts={blogPosts || []} />
-            {/* You can add other summary cards here */}
-         </div>
-    </div>
-  );
+    );
 }

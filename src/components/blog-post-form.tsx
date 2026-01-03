@@ -29,6 +29,9 @@ const blogPostFormSchema = z.object({
   category: z.enum(BLOG_CATEGORIES, { required_error: 'กรุณาเลือกหมวดหมู่' }),
   imageUrl: z.string().min(1, { message: "กรุณาใส่รูปภาพ" }),
   tags: z.string().optional().transform(val => val ? val.split(',').map(tag => tag.trim()).filter(Boolean) : []),
+  slug: z.string().optional(),
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
 });
 
 type BlogPostFormData = z.infer<typeof blogPostFormSchema>;
@@ -66,8 +69,26 @@ export default function BlogPostForm({ mode = 'create', post }: BlogPostFormProp
       category: post?.category,
       imageUrl: post?.imageUrl || '',
       tags: post?.tags?.join(', ') || '',
+      slug: post?.slug || '',
+      metaTitle: post?.metaTitle || '',
+      metaDescription: post?.metaDescription || '',
     },
   });
+
+  const titleValue = watch('title');
+  const slugValue = watch('slug');
+
+  // Auto-generate slug from title if slug is empty or was auto-generated
+  useEffect(() => {
+    if (mode === 'create' && titleValue && !slugValue) {
+      const generatedSlug = titleValue
+        .toLowerCase()
+        .replace(/^\s+|\s+$/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '');
+      setValue('slug', generatedSlug);
+    }
+  }, [titleValue, mode, setValue, slugValue]);
 
   const imageUrlValue = watch('imageUrl');
 
@@ -82,10 +103,10 @@ export default function BlogPostForm({ mode = 'create', post }: BlogPostFormProp
 
   const onFormSubmit = (data: BlogPostFormData) => {
     if (!user) {
-        toast({ title: "ไม่ได้รับอนุญาต", description: "คุณต้องเข้าสู่ระบบเพื่อสร้างบทความ", variant: "destructive" });
-        return;
+      toast({ title: "ไม่ได้รับอนุญาต", description: "คุณต้องเข้าสู่ระบบเพื่อสร้างบทความ", variant: "destructive" });
+      return;
     }
-    
+
     startTransition(async () => {
       try {
         if (mode === 'create') {
@@ -131,11 +152,11 @@ export default function BlogPostForm({ mode = 'create', post }: BlogPostFormProp
     };
     reader.readAsDataURL(file);
   };
-  
+
   const handleSourceChange = (source: 'upload' | 'url') => {
-      setImageSource(source);
-      setValue('imageUrl', '', { shouldValidate: true }); // Clear image on source change
-      setImageError(null);
+    setImageSource(source);
+    setValue('imageUrl', '', { shouldValidate: true }); // Clear image on source change
+    setImageError(null);
   }
 
 
@@ -152,7 +173,7 @@ export default function BlogPostForm({ mode = 'create', post }: BlogPostFormProp
         <Textarea id="excerpt" {...register('excerpt')} placeholder="สรุปสั้นๆ เกี่ยวกับบทความ..." className="min-h-[80px]" required />
         {errors.excerpt && <p className="text-sm font-medium text-destructive">{errors.excerpt.message}</p>}
       </div>
-      
+
       <div className="space-y-2">
         <Label htmlFor="content">เนื้อหา</Label>
         <Textarea id="content" {...register('content')} placeholder="เขียนเนื้อหาบทความของคุณที่นี่..." className="min-h-[250px]" required />
@@ -191,32 +212,32 @@ export default function BlogPostForm({ mode = 'create', post }: BlogPostFormProp
       <div className="space-y-4 border-t pt-4">
         <Label>รูปภาพหลัก</Label>
         <RadioGroup value={imageSource} onValueChange={handleSourceChange} className="flex gap-4">
-            <div className="flex items-center space-x-2">
-                <RadioGroupItem value="upload" id="r_upload" />
-                <Label htmlFor="r_upload">อัปโหลดไฟล์</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-                <RadioGroupItem value="url" id="r_url" />
-                <Label htmlFor="r_url">ใช้ URL</Label>
-            </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="upload" id="r_upload" />
+            <Label htmlFor="r_upload">อัปโหลดไฟล์</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="url" id="r_url" />
+            <Label htmlFor="r_url">ใช้ URL</Label>
+          </div>
         </RadioGroup>
-        
+
         {imageSource === 'upload' ? (
-             <div className="space-y-2">
-                <Input id="imageUpload" type="file" accept={ACCEPTED_IMAGE_TYPES.join(',')} onChange={handleImageUpload} />
-                <p className="text-xs text-muted-foreground">ขนาดไม่เกิน 2MB, แนะนำสัดส่วน 3:2 (เช่น 1200x800px)</p>
-             </div>
+          <div className="space-y-2">
+            <Input id="imageUpload" type="file" accept={ACCEPTED_IMAGE_TYPES.join(',')} onChange={handleImageUpload} />
+            <p className="text-xs text-muted-foreground">ขนาดไม่เกิน 2MB, แนะนำสัดส่วน 3:2 (เช่น 1200x800px)</p>
+          </div>
         ) : (
-             <div className="space-y-2">
-                <Input 
-                    id="imageUrlInput"
-                    type="url" 
-                    placeholder="https://example.com/image.jpg"
-                    {...register('imageUrl')}
-                />
-             </div>
+          <div className="space-y-2">
+            <Input
+              id="imageUrlInput"
+              type="url"
+              placeholder="https://example.com/image.jpg"
+              {...register('imageUrl')}
+            />
+          </div>
         )}
-       
+
         <input type="hidden" {...register('imageUrl')} />
         {errors.imageUrl && <p className="text-sm font-medium text-destructive">{errors.imageUrl.message}</p>}
         {imageError && <p className="text-sm font-medium text-destructive">{imageError}</p>}
@@ -226,6 +247,45 @@ export default function BlogPostForm({ mode = 'create', post }: BlogPostFormProp
             <Image src={imagePreview} alt="ตัวอย่างรูปภาพ" fill className="object-cover" />
           </div>
         )}
+      </div>
+
+      <div className="space-y-4 border-t pt-4">
+        <h3 className="text-lg font-bold text-primary">Search Engine Optimization (SEO)</h3>
+        <p className="text-sm text-muted-foreground">ปรับแต่งการแสดงผลบนหน้าการค้นหาของ Google</p>
+
+        <div className="space-y-2">
+          <Label htmlFor="slug">Slug (URL Path)</Label>
+          <Input
+            id="slug"
+            {...register('slug')}
+            placeholder="เช่น 5-things-before-signing"
+          />
+          <div className="rounded-md bg-blue-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1 md:flex md:justify-between">
+                <p className="text-sm text-blue-700">Slug จะถูกสร้างจากหัวข้อโดยอัตโนมัติ แต่สามารถแก้ไขได้ ควรใช้ภาษาอังกฤษและคั่นด้วย -</p>
+              </div>
+            </div>
+          </div>
+          {errors.slug && <p className="text-sm font-medium text-destructive">{errors.slug.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="metaTitle">Meta Title</Label>
+          <Input id="metaTitle" {...register('metaTitle')} placeholder="หัวข้อที่จะแสดงบน Google" />
+          {errors.metaTitle && <p className="text-sm font-medium text-destructive">{errors.metaTitle.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="metaDescription">Meta Description</Label>
+          <Textarea id="metaDescription" {...register('metaDescription')} placeholder="คำอธิบายสั้นๆ ที่จะแสดงในผลการค้นหา (ไม่เกิน 160 ตัวอักษร)" className="min-h-[80px]" />
+          {errors.metaDescription && <p className="text-sm font-medium text-destructive">{errors.metaDescription.message}</p>}
+        </div>
       </div>
 
       <Button type="submit" disabled={isPending} className="w-full">

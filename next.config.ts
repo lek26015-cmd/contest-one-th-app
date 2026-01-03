@@ -31,6 +31,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/functions/:path*',
+        destination: 'https://us-central1-studio-9679421703-db44b.cloudfunctions.net/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

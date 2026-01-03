@@ -1,4 +1,4 @@
-import { Briefcase, Mic, Code, Sprout, Rocket, Cpu, Lightbulb, Trophy, type LucideIcon } from 'lucide-react';
+import { Briefcase, Mic, Code, Sprout, Rocket, Cpu, Lightbulb, Trophy, Palette, Film, Camera, Music, type LucideIcon } from 'lucide-react';
 import type { CompetitionCategory, CategoryIcon } from '@/lib/types';
 
 export const categoryIcons: CategoryIcon[] = [
@@ -9,6 +9,11 @@ export const categoryIcons: CategoryIcon[] = [
     { name: 'Accelerator', icon: Rocket },
     { name: 'Technology', icon: Cpu },
     { name: 'Innovation', icon: Lightbulb },
+    { name: 'Design', icon: Palette },
+    { name: 'Film', icon: Film },
+    { name: 'Photography', icon: Camera },
+    { name: 'Art', icon: Palette },
+    { name: 'Music', icon: Music },
 ];
 
 export const getCategoryIcon = (category: CompetitionCategory): LucideIcon => {

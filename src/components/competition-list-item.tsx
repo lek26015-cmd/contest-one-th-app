@@ -49,7 +49,7 @@ export default function CompetitionListItem({ competition, isSelected, onSelect 
         </div>
         <div className="flex items-center text-xs text-muted-foreground mb-2">
           <Icon className="mr-1.5 h-3 w-3" />
-          {competition.category}
+          {competition.category} • {Array.isArray(competition.participantType) ? competition.participantType.join(', ') : competition.participantType}
         </div>
         <div className="text-sm font-medium text-primary mb-2">
           💰 {competition.totalPrize > 0 ? `${competition.totalPrize.toLocaleString()} บาท` : 'ไม่ระบุ'}

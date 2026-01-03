@@ -42,15 +42,45 @@ export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
 
+  // Helper to call functions via proxy to avoid CORS
+  const callFunction = async (name: string, data: any = {}) => {
+    if (!adminUser) throw new Error("Not authenticated");
+    const token = await adminUser.getIdToken();
+    const response = await fetch(`/api/functions/${name}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ data }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Function call failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const json = await response.json();
+    if (json.error) {
+      throw new Error(json.error.message || "Unknown function error");
+    }
+    return json.result; // onCall returns { result: ... }
+  };
+
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const functions = getFunctions();
-      const listUsers = httpsCallable(functions, 'listUsers');
-      const result = await listUsers();
-      const data = result.data as { users: AdminUser[] };
+      // const functions = getFunctions();
+      // const listUsers = httpsCallable(functions, 'listUsers');
+      // const result = await listUsers();
+      // const data = result.data as { users: AdminUser[] };
+
+      const result = await callFunction('listUsers');
+      const data = result as { users: AdminUser[] };
+
       setAllUsers(data.users.sort((a, b) => new Date(b.creationTime).getTime() - new Date(a.creationTime).getTime()));
     } catch (error: any) {
+      console.error("Fetch users error:", error);
       toast({
         title: 'Error fetching users',
         description: error.message,
@@ -62,8 +92,10 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (adminUser) {
+      fetchUsers();
+    }
+  }, [adminUser]);
 
   const handleDeleteUsers = async () => {
     if (selectedUsers.size === 0) {
@@ -71,9 +103,12 @@ export default function AdminUsersPage() {
       return;
     }
     try {
-      const functions = getFunctions();
-      const deleteUsersFn = httpsCallable(functions, 'deleteUser');
-      await deleteUsersFn({ uids: Array.from(selectedUsers) });
+      // const functions = getFunctions();
+      // const deleteUsersFn = httpsCallable(functions, 'deleteUser');
+      // await deleteUsersFn({ uids: Array.from(selectedUsers) });
+
+      await callFunction('deleteUser', { uids: Array.from(selectedUsers) });
+
       toast({ title: 'Success', description: `${selectedUsers.size} user(s) deleted.` });
       setSelectedUsers(new Set());
       fetchUsers(); // Refresh the list
@@ -88,23 +123,26 @@ export default function AdminUsersPage() {
 
   const handleToggleAdmin = async (uid: string, isAdmin: boolean) => {
     try {
-        const functions = getFunctions();
-        const toggleAdminRoleFn = httpsCallable(functions, 'toggleAdminRole');
-        await toggleAdminRoleFn({ uid, isAdmin });
-        toast({ title: 'Success', description: `User role updated.` });
+      // const functions = getFunctions();
+      // const toggleAdminRoleFn = httpsCallable(functions, 'toggleAdminRole');
+      // await toggleAdminRoleFn({ uid, isAdmin });
 
-        // Update local state to reflect the change immediately
-        setAllUsers(currentUsers =>
-            currentUsers.map(u =>
-                u.uid === uid ? { ...u, customClaims: { ...u.customClaims, admin: isAdmin } } : u
-            )
-        );
+      await callFunction('toggleAdminRole', { uid, isAdmin });
+
+      toast({ title: 'Success', description: `User role updated.` });
+
+      // Update local state to reflect the change immediately
+      setAllUsers(currentUsers =>
+        currentUsers.map(u =>
+          u.uid === uid ? { ...u, customClaims: { ...u.customClaims, admin: isAdmin } } : u
+        )
+      );
     } catch (error: any) {
-         toast({
-            title: 'Error updating role',
-            description: error.message,
-            variant: 'destructive',
-        });
+      toast({
+        title: 'Error updating role',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -136,7 +174,7 @@ export default function AdminUsersPage() {
       u.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [allUsers, searchTerm]);
-  
+
   const getInitials = (name: string | undefined, email: string | undefined) => {
     return name?.charAt(0) || email?.charAt(0) || 'U';
   }
@@ -202,11 +240,11 @@ export default function AdminUsersPage() {
             ) : (
               <>
                 <div className="flex items-center p-3 border-b">
-                   <Checkbox
-                      id="select-all"
-                      checked={selectedUsers.size > 0 && selectedUsers.size === filteredUsers.filter(u => u.uid !== adminUser?.uid).length}
-                      onCheckedChange={toggleSelectAll}
-                    />
+                  <Checkbox
+                    id="select-all"
+                    checked={selectedUsers.size > 0 && selectedUsers.size === filteredUsers.filter(u => u.uid !== adminUser?.uid).length}
+                    onCheckedChange={toggleSelectAll}
+                  />
                   <label htmlFor="select-all" className="ml-4 font-medium">
                     เลือกทั้งหมด
                   </label>
@@ -214,27 +252,27 @@ export default function AdminUsersPage() {
                 {filteredUsers.map(user => (
                   <div key={user.uid} className="flex items-center justify-between p-3 border rounded-lg bg-card-foreground/5">
                     <div className="flex items-center gap-4 flex-grow">
-                       <Checkbox
-                          checked={selectedUsers.has(user.uid)}
-                          onCheckedChange={() => toggleUserSelection(user.uid)}
-                          disabled={user.uid === adminUser?.uid}
-                        />
+                      <Checkbox
+                        checked={selectedUsers.has(user.uid)}
+                        onCheckedChange={() => toggleUserSelection(user.uid)}
+                        disabled={user.uid === adminUser?.uid}
+                      />
                       <Avatar>
                         <AvatarImage src={user.photoURL} alt={user.displayName} />
                         <AvatarFallback>{getInitials(user.displayName, user.email)}</AvatarFallback>
                       </Avatar>
                       <div className='flex-grow'>
                         <div className="flex items-center gap-2">
-                           <p className="font-semibold">{user.displayName || 'No Name'}</p>
-                           {user.customClaims?.admin && (
-                              <Badge variant="secondary" className="h-5">
-                                 <Shield className="mr-1 h-3 w-3" />
-                                 Admin
-                              </Badge>
-                           )}
-                           {user.uid === adminUser?.uid && (
-                              <Badge variant="outline">(You)</Badge>
-                           )}
+                          <p className="font-semibold">{user.displayName || 'No Name'}</p>
+                          {user.customClaims?.admin && (
+                            <Badge variant="secondary" className="h-5">
+                              <Shield className="mr-1 h-3 w-3" />
+                              Admin
+                            </Badge>
+                          )}
+                          {user.uid === adminUser?.uid && (
+                            <Badge variant="outline">(You)</Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground">{user.email || 'No Email'}</p>
                         <p className="text-xs text-muted-foreground">
@@ -242,25 +280,25 @@ export default function AdminUsersPage() {
                         </p>
                       </div>
                     </div>
-                     <div className="flex items-center gap-2 text-sm pr-4">
-                        <Checkbox
-                            id={`admin-${user.uid}`}
-                            checked={!!user.customClaims?.admin}
-                            onCheckedChange={(checked) => handleToggleAdmin(user.uid, !!checked)}
-                            disabled={user.uid === adminUser?.uid}
-                        />
-                        <label htmlFor={`admin-${user.uid}`} className="font-medium">Admin</label>
+                    <div className="flex items-center gap-2 text-sm pr-4">
+                      <Checkbox
+                        id={`admin-${user.uid}`}
+                        checked={!!user.customClaims?.admin}
+                        onCheckedChange={(checked) => handleToggleAdmin(user.uid, !!checked)}
+                        disabled={user.uid === adminUser?.uid}
+                      />
+                      <label htmlFor={`admin-${user.uid}`} className="font-medium">Admin</label>
                     </div>
                   </div>
                 ))}
               </>
             )}
-             {filteredUsers.length === 0 && !isLoading && (
-                <div className="text-center py-12">
-                    <UserIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search term.</p>
-                </div>
+            {filteredUsers.length === 0 && !isLoading && (
+              <div className="text-center py-12">
+                <UserIcon className="mx-auto h-12 w-12 text-muted-foreground" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Try adjusting your search term.</p>
+              </div>
             )}
           </div>
         </CardContent>

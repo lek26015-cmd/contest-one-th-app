@@ -22,9 +22,13 @@ import SaveCompetitionButton from '@/components/save-competition-button';
 import LogSubmissionButton from '@/components/log-submission-button';
 
 
+import { useSearchParams } from 'next/navigation';
+
 export default function CompetitionDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+  const source = searchParams.get('source');
   const { user } = useUser();
   const firestore = useFirestore();
 
@@ -42,9 +46,9 @@ export default function CompetitionDetailPage() {
 
   useEffect(() => {
     if (id && firestore) {
-        incrementCompetitionView(firestore, id);
+      incrementCompetitionView(firestore, id, source || undefined);
     }
-  }, [id, firestore]);
+  }, [id, firestore, source]);
 
   useEffect(() => {
     if (user && id) {
@@ -69,7 +73,7 @@ export default function CompetitionDetailPage() {
   const isExpired = isPast(deadlineDate);
 
   const hasResources = competition.rulesUrls?.length > 0 || competition.socialUrls?.length > 0;
-  
+
   return (
     <div className="container mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-8">
@@ -109,7 +113,7 @@ export default function CompetitionDetailPage() {
                   {competition.category}
                 </Badge>
               </div>
-              
+
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
                 <div className="flex items-center">
                   <Calendar className="mr-2 h-4 w-4" />
@@ -120,28 +124,28 @@ export default function CompetitionDetailPage() {
                   <span>{isExpired ? 'หมดเขตแล้ว' : `ปิดรับสมัคร ${formatDistanceToNow(deadlineDate, { addSuffix: true, locale: th })}`}</span>
                 </div>
               </div>
-               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
-                 {competition.participantType && <div className="flex items-center">
-                    <Users className="mr-2 h-4 w-4" />
-                    <span>{competition.participantType}</span>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
+                {competition.participantType && <div className="flex items-center">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>{competition.participantType}</span>
                 </div>}
                 {competition.totalPrize > 0 && <div className="flex items-center font-medium text-primary/90">
-                    <HandCoins className="mr-2 h-4 w-4" />
-                    <span>รางวัลรวม {competition.totalPrize.toLocaleString()} บาท</span>
+                  <HandCoins className="mr-2 h-4 w-4" />
+                  <span>รางวัลรวม {competition.totalPrize.toLocaleString()} บาท</span>
                 </div>}
-            </div>
-             <div className="flex justify-start items-center flex-wrap gap-4 mt-2">
+              </div>
+              <div className="flex justify-start items-center flex-wrap gap-4 mt-2">
                 {user && (
                   <>
                     <SaveCompetitionButton
-                        userId={user.uid}
-                        competitionId={id}
-                        isInitiallySaved={isSaved}
+                      userId={user.uid}
+                      competitionId={id}
+                      isInitiallySaved={isSaved}
                     />
                     {!isExpired && <LogSubmissionButton competition={competition} user={user} />}
                   </>
                 )}
-            </div>
+              </div>
             </div>
 
             <Separator className="my-6" />
@@ -152,60 +156,60 @@ export default function CompetitionDetailPage() {
             </div>
           </div>
         </div>
-        
+
         <Separator className="my-6" />
 
         <div>
-            <h2 className="text-xl font-semibold mb-4 flex items-center"><Award className="mr-3 h-5 w-5 text-primary"/> รางวัล</h2>
-            <ul className="list-disc pl-5 space-y-2 text-foreground/80">
-                {competition.prizes.map((prize, index) => (
-                    <li key={index}>{prize}</li>
-                ))}
-            </ul>
+          <h2 className="text-xl font-semibold mb-4 flex items-center"><Award className="mr-3 h-5 w-5 text-primary" /> รางวัล</h2>
+          <ul className="list-disc pl-5 space-y-2 text-foreground/80">
+            {competition.prizes.map((prize, index) => (
+              <li key={index}>{prize}</li>
+            ))}
+          </ul>
         </div>
 
         <Separator className="my-6" />
 
         <div>
-            <h2 className="text-xl font-semibold mb-4 flex items-center"><Gavel className="mr-3 h-5 w-5 text-primary"/> กติกา</h2>
-            <p className="text-base text-foreground/80 whitespace-pre-wrap leading-relaxed">{competition.rules}</p>
+          <h2 className="text-xl font-semibold mb-4 flex items-center"><Gavel className="mr-3 h-5 w-5 text-primary" /> กติกา</h2>
+          <p className="text-base text-foreground/80 whitespace-pre-wrap leading-relaxed">{competition.rules}</p>
         </div>
 
         {hasResources && (
-            <>
-                <Separator className="my-6" />
-                <div>
-                    <h2 className="text-xl font-semibold mb-4">แหล่งข้อมูล</h2>
-                    <div className="flex flex-wrap gap-4">
-                        {competition.rulesUrls?.map((url, index) => (
-                            <Button variant="outline" asChild key={`rule-${index}`}>
-                                <a href={url} target="_blank" rel="noopener noreferrer">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    ดาวน์โหลดกติกา #{index + 1}
-                                </a>
-                            </Button>
-                        ))}
-                        {competition.socialUrls?.map((url, index) => (
-                            <Button variant="outline" asChild key={`social-${index}`}>
-                                <a href={url} target="_blank" rel="noopener noreferrer">
-                                    <Share2 className="mr-2 h-4 w-4" />
-                                     โซเชียล/ประกาศ #{index + 1}
-                                </a>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-            </>
+          <>
+            <Separator className="my-6" />
+            <div>
+              <h2 className="text-xl font-semibold mb-4">แหล่งข้อมูล</h2>
+              <div className="flex flex-wrap gap-4">
+                {competition.rulesUrls?.map((url, index) => (
+                  <Button variant="outline" asChild key={`rule-${index}`}>
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                      <Download className="mr-2 h-4 w-4" />
+                      ดาวน์โหลดกติกา #{index + 1}
+                    </a>
+                  </Button>
+                ))}
+                {competition.socialUrls?.map((url, index) => (
+                  <Button variant="outline" asChild key={`social-${index}`}>
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                      <Share2 className="mr-2 h-4 w-4" />
+                      โซเชียล/ประกาศ #{index + 1}
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         <Separator className="my-6" />
 
       </div>
-      
+
       {related && related.length > 0 && (
         <>
-            <Separator className="my-12" />
-            <RelatedCompetitions competitions={related} />
+          <Separator className="my-12" />
+          <RelatedCompetitions competitions={related} />
         </>
       )}
     </div>
