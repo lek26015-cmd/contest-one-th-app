@@ -226,115 +226,182 @@ export function AuthForm() {
   )
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="login">เข้าสู่ระบบ</TabsTrigger>
-        <TabsTrigger value="register">สมัครสมาชิก</TabsTrigger>
-      </TabsList>
-      <TabsContent value="login">
-        <Card>
-          <CardHeader>
-            <CardTitle>เข้าสู่ระบบ</CardTitle>
-            <CardDescription>
-              เข้าสู่ระบบเพื่อจัดการและติดตามการแข่งขันของคุณ
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleLoginSubmit(onLogin)}>
-            <CardContent className="space-y-4">
+    <div className="w-full font-body">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-100/50 p-1 rounded-2xl mb-8 h-12">
+          <TabsTrigger value="login" className="rounded-xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            เข้าสู่ระบบ
+          </TabsTrigger>
+          <TabsTrigger value="register" className="rounded-xl font-black text-xs uppercase tracking-widest data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            สมัครสมาชิก
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="login" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6">
+            <div className="mb-8">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight font-headline">ยินดีต้อนรับกลับมา</h2>
+              <p className="text-sm font-bold text-slate-400 mt-1">เข้าสู่ระบบเพื่อจัดการและติดตามการแข่งขันของคุณ</p>
+            </div>
+
+            <form onSubmit={handleLoginSubmit(onLogin)} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="login-email">อีเมล</Label>
-                <Input id="login-email" type="email" placeholder="m@example.com" {...registerLogin('email')} />
-                {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email.message}</p>}
+                <Label htmlFor="login-email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">อีเมล</Label>
+                <Input 
+                  id="login-email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  {...registerLogin('email')} 
+                  className="h-14 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/5 font-bold transition-all"
+                />
+                {loginErrors.email && <p className="text-xs font-bold text-destructive mt-1">{loginErrors.email?.message}</p>}
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="login-password">รหัสผ่าน</Label>
-                <Input id="login-password" type="password" {...registerLogin('password')} />
-                {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password.message}</p>}
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="login-password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">รหัสผ่าน</Label>
+                  <button 
+                    type="button" 
+                    onClick={handlePasswordReset} 
+                    className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
+                  >
+                    ลืมรหัสผ่าน?
+                  </button>
+                </div>
+                <Input 
+                  id="login-password" 
+                  type="password" 
+                  {...registerLogin('password')} 
+                  className="h-14 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary/5 font-bold transition-all"
+                />
+                {loginErrors.password && <p className="text-xs font-bold text-destructive mt-1">{loginErrors.password?.message}</p>}
               </div>
-            </CardContent>
-            <CardFooter className="flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
-                {(isLoading && !isGoogleLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                เข้าสู่ระบบ
+
+              <div className="pt-2 space-y-3">
+                <Button type="submit" className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-xl shadow-primary/20 transition-all active:scale-[0.98]" disabled={isLoading || isGoogleLoading}>
+                  {isLoading && !isGoogleLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'เข้าสู่ระบบ'}
+                </Button>
+                
+                <Button variant="ghost" className="w-full h-14 rounded-2xl font-black text-slate-400 hover:text-slate-600 hover:bg-slate-50" disabled={isLoading || isGoogleLoading} onClick={handleAnonymousSignIn} type="button">
+                  เข้าใช้งานแบบไม่ระบุตัวตน
+                </Button>
+              </div>
+
+              <div className="relative py-4">
+                <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
+                <div className="relative flex justify-center"><span className="bg-white px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">หรือใช้บัญชี</span></div>
+              </div>
+
+              <Button 
+                variant="outline" 
+                className="w-full h-14 rounded-2xl border-2 border-slate-50 hover:border-slate-100 hover:bg-slate-50 font-black flex items-center justify-center gap-3 transition-all" 
+                disabled={isGoogleLoading || isLoading} 
+                onClick={handleGoogleSignIn} 
+                type="button"
+              >
+                {isGoogleLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon />}
+                เข้าสู่ระบบด้วย Google
               </Button>
-               <Button variant="secondary" className="w-full" disabled={isLoading || isGoogleLoading} onClick={handleAnonymousSignIn} type="button">
-                {(isLoading && !isGoogleLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                เข้าสู่ระบบแบบไม่ระบุตัวตน
-              </Button>
-              {sharedFooter}
-              <Button variant="link" size="sm" onClick={handlePasswordReset} disabled={isResettingPassword} type="button">
-                 {isResettingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                ลืมรหัสผ่าน?
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </TabsContent>
-      <TabsContent value="register">
-        <Card>
-          <CardHeader>
-            <CardTitle>สมัครสมาชิก</CardTitle>
-            <CardDescription>
-              สร้างบัญชีใหม่เพื่อเริ่มต้นการแข่งขัน
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleRegisterSubmit(onRegister)}>
-            <CardContent className="space-y-4">
+            </form>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="register" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="space-y-6">
+            <div className="mb-6">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight font-headline">เข้าร่วมกับเรา</h2>
+              <p className="text-sm font-bold text-slate-400 mt-1">เริ่มต้นการเดินทางในโลกของการแข่งขันได้ที่นี่</p>
+            </div>
+
+            <form onSubmit={handleRegisterSubmit(onRegister)} className="space-y-5">
               <div className="space-y-3">
-                <Label>ประเภทผู้ใช้งาน</Label>
-                {/* Role Selector for react-hook-form */}
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">คุณคือใคร?</Label>
                 <div className="flex gap-4">
                   <button
                     type="button"
                     onClick={() => setValueRegister('role', 'user')}
                     className={cn(
-                      "flex-1 p-6 rounded-[1.5rem] border-2 transition-all text-center",
-                      watchRegister('role') === 'user' ? "border-primary bg-primary/5 text-primary" : "border-slate-50 bg-slate-50 text-slate-400"
+                      "flex-1 p-4 rounded-2xl border-2 transition-all group overflow-hidden relative",
+                      watchRegister('role') === 'user' ? "border-primary bg-primary/5 text-primary" : "border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-100"
                     )}
                   >
-                    <div className="font-black text-lg">นักล่ารางวัล</div>
-                    <div className="text-[11px] opacity-70 mt-1 uppercase font-bold tracking-widest">ค้นหาและลงสมัครแข่ง</div>
+                    <div className="font-black text-sm relative z-10">นักล่ารางวัล</div>
+                    <div className="text-[9px] font-bold uppercase tracking-wider opacity-60 mt-1 relative z-10">SEARCH & APPLY</div>
                   </button>
                   <button
                     type="button"
                     onClick={() => setValueRegister('role', 'organizer')}
                     className={cn(
-                      "flex-1 p-6 rounded-[1.5rem] border-2 transition-all text-center",
-                      watchRegister('role') === 'organizer' ? "border-primary bg-primary/5 text-primary" : "border-slate-50 bg-slate-50 text-slate-400"
+                      "flex-1 p-4 rounded-2xl border-2 transition-all group overflow-hidden relative",
+                      watchRegister('role') === 'organizer' ? "border-primary bg-primary/5 text-primary" : "border-slate-50 bg-slate-50 text-slate-400 hover:border-slate-100"
                     )}
                   >
-                    <div className="font-black text-lg">ผู้จัดงาน</div>
-                    <div className="text-[11px] opacity-70 mt-1 uppercase font-bold tracking-widest">สร้างและโปรโมทงานแข่ง</div>
+                    <div className="font-black text-sm relative z-10">ผู้จัดงาน</div>
+                    <div className="text-[9px] font-bold uppercase tracking-wider opacity-60 mt-1 relative z-10">CREATE & MANAGE</div>
                   </button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="register-email">อีเมล</Label>
-                <Input id="register-email" type="email" placeholder="m@example.com" {...registerRegister('email')} />
-                {registerErrors.email && <p className="text-sm text-destructive">{registerErrors.email.message}</p>}
+                <Label htmlFor="register-email" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">อีเมล</Label>
+                <Input 
+                  id="register-email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  {...registerRegister('email')} 
+                  className="h-14 bg-slate-50 border-none rounded-2xl font-bold" 
+                />
+                {registerErrors.email && <p className="text-xs font-bold text-destructive">{registerErrors.email?.message}</p>}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="register-password">รหัสผ่าน</Label>
-                <Input id="register-password" type="password" {...registerRegister('password')} />
-                {registerErrors.password && <p className="text-sm text-destructive">{registerErrors.password.message}</p>}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="register-password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">รหัสผ่าน</Label>
+                  <Input 
+                    id="register-password" 
+                    type="password" 
+                    {...registerRegister('password')} 
+                    className="h-14 bg-slate-50 border-none rounded-2xl font-bold" 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password" className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">ยืนยันรหัสผ่าน</Label>
+                  <Input 
+                    id="confirm-password" 
+                    type="password" 
+                    {...registerRegister('confirmPassword')} 
+                    className="h-14 bg-slate-50 border-none rounded-2xl font-bold" 
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">ยืนยันรหัสผ่าน</Label>
-                <Input id="confirm-password" type="password" {...registerRegister('confirmPassword')} />
-                {registerErrors.confirmPassword && <p className="text-sm text-destructive">{registerErrors.confirmPassword.message}</p>}
+              {registerErrors.password && <p className="text-xs font-bold text-destructive">{registerErrors.password?.message}</p>}
+              {registerErrors.confirmPassword && <p className="text-xs font-bold text-destructive">{registerErrors.confirmPassword?.message}</p>}
+
+              <div className="pt-4 space-y-4">
+                <Button type="submit" className="w-full h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-lg shadow-xl transition-all" disabled={isLoading || isGoogleLoading}>
+                  {isLoading && !isGoogleLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'สร้างบัญชีผู้ใช้คร้บ'}
+                </Button>
+
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
+                  <div className="relative flex justify-center"><span className="bg-white px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300">หรือสมัครด้วย</span></div>
+                </div>
+
+                <Button 
+                  variant="outline" 
+                  className="w-full h-14 rounded-2xl border-2 border-slate-50 text-slate-600 font-black gap-3" 
+                  disabled={isGoogleLoading || isLoading} 
+                  onClick={handleGoogleSignIn} 
+                  type="button"
+                >
+                  <GoogleIcon />
+                  Google Account
+                </Button>
               </div>
-            </CardContent>
-            <CardFooter className="flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
-                {(isLoading && !isGoogleLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                สมัครสมาชิก
-              </Button>
-               {sharedFooter}
-            </CardFooter>
-          </form>
-        </Card>
-      </TabsContent>
-    </Tabs>
+            </form>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

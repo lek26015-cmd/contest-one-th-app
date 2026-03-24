@@ -12,7 +12,8 @@ import {
   ChevronRight,
   ExternalLink,
   Table as TableIcon,
-  LayoutGrid
+  LayoutGrid,
+  Lock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
+import { canAccessCSV, canDownloadAll } from '@/lib/plan-utils';
+import Link from 'next/link';
 
 export default function ParticipantsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,9 +55,27 @@ export default function ParticipantsPage() {
           <p className="text-slate-400 font-bold mt-1">จัดการผู้สมัครและตรวจสอบผลงานของนักล่ารางวัลของคุณ</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="h-12 border-none shadow-sm bg-white rounded-xl px-6 font-black text-slate-600 hover:bg-slate-50">
-            <Download className="mr-2 h-4 w-4" /> ส่งออกข้อมูล (CSV)
+          {/* Gated Export & Download All - Using Starter (0) for global view demonstration */}
+          <Button 
+            variant="outline" 
+            asChild
+            className={cn("h-12 border-none shadow-sm font-black rounded-xl px-6 bg-slate-100 text-slate-400 hover:bg-slate-200 transition-all")}
+          >
+            <Link href="/pricing" className="flex items-center">
+              <Lock className="mr-2 h-3.5 w-3.5" /> ส่งออก CSV
+            </Link>
           </Button>
+
+          <Button 
+            variant="outline" 
+            asChild
+            className={cn("h-12 border-none shadow-sm font-black rounded-xl px-6 bg-slate-100 text-slate-400 hover:bg-slate-200 transition-all")}
+          >
+            <Link href="/pricing" className="flex items-center">
+              <Lock className="mr-2 h-3.5 w-3.5" /> Download All (ZIP)
+            </Link>
+          </Button>
+
           <Button className="bg-primary hover:bg-primary/90 text-[13px] font-black h-12 px-6 rounded-2xl shadow-lg shadow-primary/20">
              ติดต่อผู้สมัครทั้งหมด
           </Button>
@@ -64,9 +85,9 @@ export default function ParticipantsPage() {
       <div className="flex flex-col md:flex-row gap-4 items-center">
         <div className="relative flex-grow w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <Input 
+          <input 
             placeholder="ค้นหาชื่อหรืออีเมลผู้สมัคร..." 
-            className="pl-10 h-12 bg-white border-none shadow-sm rounded-xl focus:ring-2 focus:ring-primary/20"
+            className="w-full pl-10 h-12 bg-white border-none shadow-sm rounded-xl focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-600"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

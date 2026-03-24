@@ -151,11 +151,11 @@ export default function HeroSearchHorizontal({
               )}
             </>
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-800 bg-slate-50 text-center p-8">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-800 bg-slate-50 text-center p-4 sm:p-8">
               <div className="relative mb-2">
-                <Award className="h-28 w-28 text-slate-300 drop-shadow-sm" strokeWidth={1.5} />
+                <Award className="h-16 w-16 sm:h-24 sm:w-24 md:h-28 md:w-28 text-slate-300 drop-shadow-sm" strokeWidth={1.5} />
               </div>
-              <h2 className="text-3xl md:text-5xl lg:text-5xl font-black tracking-tight z-10 text-slate-400">ยังไม่มีโฆษณาขณะนี้</h2>
+              <h2 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tight z-10 text-slate-400 px-4">ยังไม่มีโฆษณาขณะนี้</h2>
             </div>
           )}
         </div>

@@ -79,6 +79,7 @@ export async function addCompetition(
     id: newId,
     views: 0,
     featured: false,
+    planLevel: 0,
     createdAt: serverTimestamp(),
   };
 

@@ -36,15 +36,15 @@ export default function CompetitionListItem({ competition, isSelected, onSelect 
         }
       }}
       className={cn(
-        "w-full text-left p-6 rounded-xl border transition-all duration-200 bg-white mb-4 cursor-pointer",
+        "w-full text-left p-4 md:p-6 rounded-xl border transition-all duration-200 bg-white mb-4 cursor-pointer",
         isSelected 
           ? "border-l-4 border-l-primary border-slate-200 shadow-md ring-1 ring-primary/10" 
           : "border-slate-100 hover:border-slate-300 shadow-sm hover:shadow-md"
       )}
     >
-      <div className="flex flex-row items-start gap-6">
+      <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6">
         {/* Logo Section */}
-        <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 border border-slate-100 p-2 flex items-center justify-center">
+        <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 border border-slate-100 p-2 flex items-center justify-center">
           {competition.imageUrl ? (
             <Image
               src={competition.imageUrl}
@@ -61,13 +61,13 @@ export default function CompetitionListItem({ competition, isSelected, onSelect 
         </div>
 
         {/* Info Section */}
-        <div className="flex-grow min-w-0">
-          <div className="flex justify-between items-start gap-4">
-            <div>
-              <h3 className="font-black text-xl text-slate-900 mb-1 leading-tight line-clamp-2">
+        <div className="flex-grow min-w-0 w-full">
+          <div className="flex justify-between items-start gap-4 w-full">
+            <div className="min-w-0 flex-grow">
+              <h3 className="font-black text-lg md:text-xl text-slate-900 mb-1 leading-tight line-clamp-2">
                 {competition.title}
               </h3>
-              <p className="text-slate-600 font-bold mb-3 truncate">
+              <p className="text-slate-600 font-bold mb-3 truncate text-xs md:text-sm">
                 {competition.organizer || "ผู้จัดงานอเนกประสงค์"}
               </p>
             </div>

@@ -38,6 +38,8 @@ export type UserProfile = {
   role: UserRole;
   createdAt: Timestamp;
   plan?: 'free' | 'pro' | 'enterprise';
+  subscriptionPlan?: string;
+  activeSubscription?: boolean;
 };
 
 export type Lawyer = {
@@ -83,6 +85,7 @@ export type Competition = {
   formFields?: FormFieldConfig[];
   userId?: string;
   winnersAnnounced?: boolean;
+  planLevel?: number;
 };
 
 export type SavedCompetition = {
@@ -225,4 +228,44 @@ export type LandingPage = {
   theme: LandingPageTheme;
   createdAt: string;
   updatedAt: string;
+};
+export type JudgingCriteria = {
+  id: string;
+  name: string;
+  description?: string;
+  maxScore: number;
+  weight: number; // 0 to 1
+};
+
+export type JudgeAssignment = {
+  id: string;
+  competitionId: string;
+  userId: string;
+  userEmail: string;
+  userName?: string;
+  status: 'pending' | 'accepted' | 'declined';
+  invitedAt: string;
+};
+
+export type JudgingScore = {
+  id: string;
+  submissionId: string;
+  judgeId: string;
+  competitionId: string;
+  criteriaScores: {
+    criteriaId: string;
+    score: number;
+  }[];
+  totalScore: number;
+  weightedTotalScore: number;
+  comment?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CompetitionJudgingConfig = {
+  competitionId: string;
+  criteria: JudgingCriteria[];
+  judgingStatus: 'not_started' | 'in_progress' | 'completed';
+  isPublicResults: boolean;
 };

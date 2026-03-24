@@ -79,8 +79,11 @@ export default function Header() {
 
     if (!user) {
       return (
-        <Button asChild className="bg-primary text-white hover:bg-primary/90 font-bold px-6 rounded-lg shadow-sm border-none transition-all">
-            <Link href="/login">เข้าสู่ระบบ / สมัครสมาชิก</Link>
+        <Button asChild className="bg-primary text-white hover:bg-primary/90 font-bold px-3 md:px-6 rounded-lg shadow-sm border-none transition-all text-sm md:text-base whitespace-nowrap">
+            <Link href="/login">
+              <span className="md:hidden">เข้าสู่ระบบ</span>
+              <span className="hidden md:inline">เข้าสู่ระบบ / สมัครสมาชิก</span>
+            </Link>
         </Button>
       )
     }

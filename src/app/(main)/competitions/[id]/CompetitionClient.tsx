@@ -217,11 +217,18 @@ export default function CompetitionDetailPage() {
                              </Link>
                          </Button>
                      )}
-                     {isExpired && (
+                     {isExpired && activeCompetition.winnersAnnounced ? (
+                       <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white font-black px-10 py-6 rounded-xl shadow-lg transition-transform hover:scale-105" asChild>
+                          <Link href={`/competitions/${activeCompetition.id}/results`}>
+                             <TrophyIcon className="mr-2 h-5 w-5" />
+                             ดูผลการตัดสิน
+                          </Link>
+                       </Button>
+                     ) : isExpired ? (
                        <Button size="lg" disabled className="bg-slate-200 text-slate-500 font-black px-10 py-6 rounded-xl">
                           ปิดรับสมัครแล้ว
                        </Button>
-                     )}
+                     ) : null}
                    </div>
                 </div>
 
@@ -250,10 +257,17 @@ export default function CompetitionDetailPage() {
                   <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
                     <TrophyIcon className="h-40 w-40 text-amber-500" />
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900 mb-8 tracking-tight flex items-center gap-3 relative z-10">
-                    <TrophyIcon className="h-8 w-8 text-amber-500" />
-                    หอเกียรติยศ (Hall of Fame)
-                  </h2>
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 relative z-10">
+                    <h2 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                      <TrophyIcon className="h-8 w-8 text-amber-500" />
+                      หอเกียรติยศ (Hall of Fame)
+                    </h2>
+                    <Button asChild className="bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl px-6">
+                      <Link href={`/competitions/${activeCompetition.id}/results`}>
+                         <Award className="mr-2 h-4 w-4" /> ดูประกาศผลฉบับเต็ม
+                      </Link>
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                     {winnerList.length > 0 ? (
                       winnerList.map((winner) => (

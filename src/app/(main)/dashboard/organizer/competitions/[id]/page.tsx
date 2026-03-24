@@ -22,7 +22,8 @@ import {
   FileText,
   Search,
   Filter,
-  Layout
+  Layout,
+  Gavel
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,8 @@ import type { Competition, Submission } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { canAccessCSV, canAccessJudging, canAccessLandingPage, getPlanConfig } from '@/lib/plan-utils';
+import { Lock } from 'lucide-react';
 
 export default function CompetitionDetailPage() {
   const params = useParams();
@@ -218,10 +221,25 @@ export default function CompetitionDetailPage() {
               <Edit3 className="mr-2 h-4 w-4" /> แก้ไขข้อมูล
             </Link>
           </Button>
-          <Button variant="outline" asChild className="h-12 border-none shadow-sm bg-white rounded-xl px-6 font-bold text-slate-600 hover:bg-slate-50">
-            <Link href={`/dashboard/organizer/competitions/${id}/landing-page`}>
-              <Layout className="mr-2 h-4 w-4" /> ตัวสร้างหน้า Landing Page
-            </Link>
+          <Button 
+            variant="outline" 
+            asChild 
+            className={cn(
+              "h-12 border-none shadow-sm font-bold rounded-xl px-6 transition-all",
+              canAccessLandingPage(competition.planLevel)
+                ? "bg-white text-slate-600 hover:bg-slate-50"
+                : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+            )}
+          >
+            {canAccessLandingPage(competition.planLevel) ? (
+              <Link href={`/dashboard/organizer/competitions/${id}/landing-page`}>
+                <Layout className="mr-2 h-4 w-4" /> ตัวสร้างหน้า Landing Page
+              </Link>
+            ) : (
+              <Link href="/pricing">
+                <Lock className="mr-2 h-4 w-4" /> ตัวสร้างหน้า Landing Page
+              </Link>
+            )}
           </Button>
           <Button asChild className="h-12 bg-slate-900 hover:bg-slate-800 text-white font-black px-6 rounded-xl shadow-lg shadow-slate-200">
             <Link href={`/competitions/${id}`} target="_blank">
@@ -258,101 +276,142 @@ export default function CompetitionDetailPage() {
         {/* Left: Applicants List */}
         <div className="lg:col-span-3 space-y-8">
           {/* Winners Selection Card */}
-          <Card className="border-none shadow-sm bg-primary/5 overflow-hidden rounded-3xl border border-primary/10">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-primary" />
-                  คัดเลือกผู้ชนะ (Winners)
-                </CardTitle>
-                <CardDescription className="font-bold text-slate-500">
-                  เลือกผู้ชนะจากการแข่งขันเพื่อประกาศผลในหน้าเว็บไซต์
-                </CardDescription>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleAddAward}
-                className="bg-white border-primary/20 text-primary font-black rounded-xl hover:bg-primary hover:text-white transition-all"
-              >
-                + เพิ่มรางวัล
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-6 pt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {winners.map((win, index) => (
-                  <div key={index} className="space-y-2 relative group-award">
-                    <div className="flex items-center justify-between">
-                      <Input
-                        value={win.awardName}
-                        onChange={(e) => handleUpdateAward(index, { awardName: e.target.value })}
-                        className="bg-transparent border-none p-0 h-auto text-[10px] font-black uppercase tracking-widest text-slate-400 focus-visible:ring-0 focus-visible:text-primary transition-colors w-full"
-                        placeholder="ชื่อรางวัล (เช่น อันดับ 1)"
-                      />
-                      {winners.length > 1 && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50"
-                          onClick={() => handleRemoveAward(index)}
-                        >
-                          <Clock className="h-3 w-3 rotate-45" /> 
-                        </Button>
-                      )}
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full h-14 justify-start bg-white border-2 hover:border-primary transition-all rounded-2xl px-4 gap-3">
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center font-black",
-                            win.rank === 1 ? "bg-amber-100 text-amber-600" :
-                            win.rank === 2 ? "bg-slate-100 text-slate-600" :
-                            win.rank === 3 ? "bg-orange-100 text-orange-600" :
-                            "bg-primary/10 text-primary"
-                          )}>
-                            {win.rank || '★'}
-                          </div>
-                          <span className="truncate font-bold">
-                            {win.submissionId ? filteredSubmissions.find(s => s.id === win.submissionId)?.userName : `คลิกเพื่อเลือกผู้ชนะ`}
-                          </span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-64 max-h-80 overflow-y-auto p-2 rounded-2xl shadow-xl border-slate-50">
-                        <DropdownMenuItem 
-                          onClick={() => handleUpdateAward(index, { submissionId: '' })}
-                          className="p-3 rounded-xl font-bold text-sm cursor-pointer text-slate-400"
-                        >
-                           -- ไม่เลือก --
-                        </DropdownMenuItem>
-                        {filteredSubmissions.map((sub) => (
-                          <DropdownMenuItem 
-                            key={sub.id} 
-                            onClick={() => handleUpdateAward(index, { submissionId: sub.id })}
-                            className="p-3 rounded-xl font-bold text-sm cursor-pointer flex items-center gap-3"
-                          >
-                             <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-xs text-slate-400">
-                               {sub.userName?.charAt(0)}
-                             </div>
-                             {sub.userName}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+          {/* Winners Selection Card - Gated by Judging Access */}
+          {!canAccessJudging(competition.planLevel) ? (
+            <Card className="border-none shadow-sm bg-slate-100 overflow-hidden rounded-3xl border border-slate-200 opacity-80 group/lock relative">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/5 backdrop-blur-[2px] rounded-3xl group-hover/lock:bg-slate-900/10 transition-all duration-500">
+                <div className="bg-white/90 p-4 rounded-2xl shadow-2xl flex flex-col items-center text-center max-w-sm border border-slate-100 transform group-hover/lock:scale-105 transition-transform">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                    <Lock className="h-6 w-6 text-primary" />
                   </div>
-                ))}
+                  <h4 className="font-black text-slate-900 text-lg mb-2">ฟีเจอร์สำหรับระดับ Enterprise</h4>
+                  <p className="text-sm font-bold text-slate-500 mb-6 leading-relaxed">
+                    ยกระดับมาตรฐานงานแข่งด้วยระบบ Judging Panel <br/>สรุปคะแนนกรรมการแบบเรียลไทม์
+                  </p>
+                  <Button asChild className="bg-primary hover:bg-primary/90 text-white font-black px-8 rounded-xl h-12 shadow-lg shadow-primary/20">
+                    <Link href="/pricing">ปลดล็อกทันที (฿15,000 / งาน)</Link>
+                  </Button>
+                </div>
               </div>
-              <div className="pt-4 border-t border-slate-200/50 flex justify-end">
-                <Button 
-                  onClick={handleAnnounceWinners}
-                  disabled={isAnnouncing}
-                  className="bg-primary hover:bg-primary/90 text-white font-black px-10 py-6 rounded-2xl shadow-lg shadow-primary/20 "
-                >
-                  {isAnnouncing ? <Clock className="animate-spin mr-2 h-5 w-5" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                  {competition.winnersAnnounced ? "อัปเดตประกาศผลผู้ชนะ" : "ประกาศผลผู้ชนะทันที"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              <CardHeader className="pb-2 flex flex-row items-center justify-between blur-[4px] pointer-events-none">
+                <div>
+                  <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                    คัดเลือกผู้ชนะ (Judging Panel)
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="h-48 blur-[4px] pointer-events-none"></CardContent>
+            </Card>
+          ) : (
+            <Card className="border-none shadow-sm bg-primary/5 overflow-hidden rounded-3xl border border-primary/10">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-black text-slate-900 flex items-center gap-2">
+                    <Trophy className="h-5 w-5 text-primary" />
+                    คัดเลือกผู้ชนะ (Winners)
+                  </CardTitle>
+                  <CardDescription className="font-bold text-slate-500">
+                    เลือกผู้ชนะจากการแข่งขันเพื่อประกาศผลในหน้าเว็บไซต์
+                  </CardDescription>
+                </div>
+                <div className="flex gap-3">
+                  {canAccessJudging(competition.planLevel) && (
+                    <Button 
+                      asChild
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl px-6 h-10 shadow-lg"
+                    >
+                      <Link href={`/dashboard/organizer/competitions/${id}/judging`}>
+                        <Gavel className="mr-2 h-4 w-4" /> ระบบตัดสินแบบละเอียด
+                      </Link>
+                    </Button>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleAddAward}
+                    className="bg-white border-primary/20 text-primary font-black rounded-xl hover:bg-primary hover:text-white transition-all h-10"
+                  >
+                    + เพิ่มรางวัล
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {winners.map((win, index) => (
+                    <div key={index} className="space-y-2 relative group-award">
+                      <div className="flex items-center justify-between">
+                        <Input
+                          value={win.awardName}
+                          onChange={(e) => handleUpdateAward(index, { awardName: e.target.value })}
+                          className="bg-transparent border-none p-0 h-auto text-[10px] font-black uppercase tracking-widest text-slate-400 focus-visible:ring-0 focus-visible:text-primary transition-colors w-full"
+                          placeholder="ชื่อรางวัล (เช่น อันดับ 1)"
+                        />
+                        {winners.length > 1 && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50"
+                            onClick={() => handleRemoveAward(index)}
+                          >
+                            <Clock className="h-3 w-3 rotate-45" /> 
+                          </Button>
+                        )}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full h-14 justify-start bg-white border-2 hover:border-primary transition-all rounded-2xl px-4 gap-3">
+                            <div className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center font-black",
+                              win.rank === 1 ? "bg-amber-100 text-amber-600" :
+                              win.rank === 2 ? "bg-slate-100 text-slate-600" :
+                              win.rank === 3 ? "bg-orange-100 text-orange-600" :
+                              "bg-primary/10 text-primary"
+                            )}>
+                              {win.rank || '★'}
+                            </div>
+                            <span className="truncate font-bold">
+                              {win.submissionId ? filteredSubmissions.find(s => s.id === win.submissionId)?.userName : `คลิกเพื่อเลือกผู้ชนะ`}
+                            </span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-64 max-h-80 overflow-y-auto p-2 rounded-2xl shadow-xl border-slate-50">
+                          <DropdownMenuItem 
+                            onClick={() => handleUpdateAward(index, { submissionId: '' })}
+                            className="p-3 rounded-xl font-bold text-sm cursor-pointer text-slate-400"
+                          >
+                             -- ไม่เลือก --
+                          </DropdownMenuItem>
+                          {filteredSubmissions.map((sub) => (
+                            <DropdownMenuItem 
+                              key={sub.id} 
+                              onClick={() => handleUpdateAward(index, { submissionId: sub.id })}
+                              className="p-3 rounded-xl font-bold text-sm cursor-pointer flex items-center gap-3"
+                            >
+                               <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-xs text-slate-400">
+                                 {sub.userName?.charAt(0)}
+                               </div>
+                               {sub.userName}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))}
+                </div>
+                <div className="pt-4 border-t border-slate-200/50 flex justify-end">
+                  <Button 
+                    onClick={handleAnnounceWinners}
+                    disabled={isAnnouncing}
+                    className="bg-primary hover:bg-primary/90 text-white font-black px-10 py-6 rounded-2xl shadow-lg shadow-primary/20 "
+                  >
+                    {isAnnouncing ? <Clock className="animate-spin mr-2 h-5 w-5" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                    {competition.winnersAnnounced ? "อัปเดตประกาศผลผู้ชนะ" : "ประกาศผลผู้ชนะทันที"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex items-center justify-between">
             <div>
@@ -372,8 +431,25 @@ export default function CompetitionDetailPage() {
                <Button variant="outline" className="h-11 border-none bg-white font-bold rounded-xl px-4 shadow-sm">
                  <Filter className="mr-2 h-4 w-4" /> ตัวกรอง
                </Button>
-               <Button variant="outline" className="h-11 border-none bg-white font-bold rounded-xl px-4 shadow-sm text-primary hover:text-primary">
-                 <Download className="mr-2 h-4 w-4" /> Export CSV
+               <Button 
+                 variant="outline" 
+                 className={cn(
+                   "h-11 border-none font-bold rounded-xl px-4 shadow-sm transition-all",
+                   canAccessCSV(competition.planLevel) 
+                    ? "bg-white text-primary hover:text-white hover:bg-primary" 
+                    : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                 )}
+                 asChild={!canAccessCSV(competition.planLevel)}
+               >
+                 {canAccessCSV(competition.planLevel) ? (
+                   <>
+                     <Download className="mr-2 h-4 w-4" /> Export CSV
+                   </>
+                 ) : (
+                   <Link href="/pricing" className="flex items-center">
+                     <Lock className="mr-2 h-3.5 w-3.5" /> Export CSV
+                   </Link>
+                 )}
                </Button>
             </div>
           </div>
