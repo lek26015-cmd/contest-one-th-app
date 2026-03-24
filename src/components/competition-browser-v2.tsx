@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import { Trophy, MousePointerClick } from 'lucide-react';
+import Image from 'next/image';
 
 export default function CompetitionBrowserV2({ competitions, isLoading }: { competitions: Competition[], isLoading: boolean }) {
   const router = useRouter();
@@ -21,16 +22,20 @@ export default function CompetitionBrowserV2({ competitions, isLoading }: { comp
   const [selectedIdState, setSelectedIdState] = useState<string | null>(null);
 
   useEffect(() => {
-    // Sync local state with URL, but prefer window.location to avoid stale Next.js params
-    // when using history.replaceState
+    // Sync local state with URL
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const urlId = params.get('id');
       if (urlId !== selectedIdState) {
         setSelectedIdState(urlId);
       }
+      
+      // Auto-redirect to full page on mobile if id is present
+      if (isMobile && urlId) {
+        router.push(`/competitions/${urlId}`);
+      }
     }
-  }, [searchParams, pathname]); // Depend on pathname/searchParams to trigger on nav changes
+  }, [searchParams, pathname, isMobile, router]);
 
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
@@ -76,70 +81,60 @@ export default function CompetitionBrowserV2({ competitions, isLoading }: { comp
   }
 
   return (
-    <div className="relative group w-full">
-      <div className="absolute -inset-4 bg-gradient-to-r from-primary/50 via-purple-500/50 to-secondary/50 rounded-3xl blur-3xl opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full relative">
+    <div className="w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative">
         {/* List View */}
-        {/* List View */}
-        <div className={`md:col-span-1 flex flex-col h-[calc(100vh-8rem)] rounded-lg border bg-card/90 overflow-hidden ${isMobile && selectedIdState ? 'hidden' : 'block'}`}>
-          <ScrollArea className="flex-grow">
-            <div className="space-y-2 p-2">
-              <AnimatePresence mode="popLayout">
-                {competitions.length > 0 ? (
-                  competitions.map((comp, index) => (
-                    <motion.div
-                      key={comp.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
-                      <CompetitionListItem
-                        competition={comp}
-                        onSelect={() => handleSelectCompetition(comp.id)}
-                        isSelected={!isMobile && selectedIdState === comp.id}
-                      />
-                    </motion.div>
-                  ))
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    ไม่พบการแข่งขันที่ค้นหา
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </ScrollArea>
+        <div className={cn(
+          "lg:col-span-4 xl:col-span-5 flex flex-col h-[calc(100vh-14rem)] overflow-y-auto pr-2 block"
+        )}>
+          <AnimatePresence mode="popLayout">
+            {competitions.length > 0 ? (
+              competitions.map((comp, index) => (
+                <motion.div
+                  key={comp.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.05 }}
+                >
+                  <CompetitionListItem
+                    competition={comp}
+                    onSelect={() => handleSelectCompetition(comp.id)}
+                    isSelected={!isMobile && selectedIdState === comp.id}
+                  />
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+                <p className="text-slate-500 font-bold">ไม่พบการแข่งขันที่ท่านค้นหา</p>
+                <p className="text-slate-400 text-sm mt-1">ลูกลองปรับเปลี่ยนคำค้นหาหรือตัวกรองดูนะ</p>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Detail View (Desktop) */}
-        <div className="hidden md:block md:col-span-2 h-[calc(100vh-8rem)] sticky top-24">
-          {selectedCompetition ? (
-            <CompetitionDetailView competition={selectedCompetition} />
-          ) : selectedIdState ? (
-            // Loading state when ID is selected but data not found yet
-            <div className="h-full w-full flex items-center justify-center border rounded-lg bg-card">
-              <Skeleton className="h-full w-full" />
-            </div>
-          ) : (
-            <div className="flex h-full min-h-[60vh] items-center justify-center rounded-lg border bg-card text-center">
-              <div>
-                <div className="mb-4 flex justify-center">
-                  <div className="relative">
-                    <Trophy className="h-24 w-24 text-muted-foreground/20" />
-                    <MousePointerClick className="absolute -bottom-2 -right-2 h-8 w-8 text-primary animate-bounce" />
-                  </div>
+        <div className="hidden lg:block lg:col-span-8 xl:col-span-7 h-[calc(100vh-14rem)] sticky top-24">
+          <div className="h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            {selectedCompetition ? (
+              <CompetitionDetailView competition={selectedCompetition} />
+            ) : (
+              <div className="flex-grow flex flex-col items-center justify-center p-12 text-center">
+                <div className="w-48 h-48 bg-slate-50 rounded-full flex items-center justify-center mb-6 overflow-hidden">
+                   <Image 
+                    src="/logo-contestone_icon-grey-transparent.png" 
+                    alt="ContestOne" 
+                    width={120} 
+                    height={120} 
+                    className="opacity-20 grayscale"
+                   />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">เลือกการแข่งขันที่สนใจ</h3>
-                <p className="text-muted-foreground max-w-xs mx-auto mt-2">
-                  คลิกที่รายการทางด้านซ้ายเพื่อดูรายละเอียด กติกา และของรางวัล
+                <h3 className="text-2xl font-black text-slate-900 mb-3">เลือกงานที่สนใจเพื่อดูรายละเอียด</h3>
+                <p className="text-slate-500 font-bold max-w-sm">
+                  คลิกที่รายการด้านซ้ายมือเพื่อเปิดดูข้อมูล กติกา และเงื่อนไขทั้งหมดของการแข่งขัน
                 </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

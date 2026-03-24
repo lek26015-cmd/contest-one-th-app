@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -30,6 +31,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from './ui/separator';
 
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
+
 const loginSchema = z.object({
   email: z.string().email('อีเมลไม่ถูกต้อง'),
   password: z.string().min(6, 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'),
@@ -39,6 +43,7 @@ const registerSchema = z.object({
   email: z.string().email('อีเมลไม่ถูกต้อง'),
   password: z.string().min(6, 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'),
   confirmPassword: z.string(),
+  role: z.enum(['user', 'organizer']).default('user'),
 }).refine(data => data.password === data.confirmPassword, {
   message: 'รหัสผ่านไม่ตรงกัน',
   path: ['confirmPassword'],
@@ -56,6 +61,7 @@ const GoogleIcon = () => (
 export function AuthForm() {
   const auth = useAuth();
   const { toast } = useToast();
+  const { firestore } = useFirebase();
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -75,12 +81,18 @@ export function AuthForm() {
     register: registerRegister,
     handleSubmit: handleRegisterSubmit,
     formState: { errors: registerErrors },
-     reset: resetRegister,
+    reset: resetRegister,
+    setValue: setValueRegister,
+    watch: watchRegister,
   } = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      role: 'user',
+    }
   });
 
   const onLogin = async (data: z.infer<typeof loginSchema>) => {
+    if (!auth) return;
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
@@ -97,10 +109,27 @@ export function AuthForm() {
   };
 
   const onRegister = async (data: z.infer<typeof registerSchema>) => {
+    if (!auth || !firestore) return;
     setIsLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, data.email, data.password);
-      // Redirect is handled by the login page
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+      
+      // Save role to Firestore immediately
+      await setDoc(doc(firestore, `users/${user.uid}`), {
+        id: user.uid,
+        email: user.email,
+        username: user.email?.split('@')[0] || `user_${user.uid.substring(0, 5)}`,
+        profileName: user.email?.split('@')[0] || 'User',
+        role: data.role,
+        createdAt: serverTimestamp(),
+        plan: data.role === 'organizer' ? 'free' : undefined,
+      });
+
+      toast({
+        title: 'สมัครสมาชิกสำเร็จ',
+        description: data.role === 'organizer' ? 'เริ่มสร้างการแข่งขันของคุณได้เลย' : 'ยินดีต้อนรับสู่ ContestOne',
+      });
     } catch (error: any) {
       toast({
         title: 'สมัครสมาชิกไม่สำเร็จ',
@@ -113,6 +142,7 @@ export function AuthForm() {
   };
   
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     setIsGoogleLoading(true);
     try {
         const provider = new GoogleAuthProvider();
@@ -129,6 +159,7 @@ export function AuthForm() {
   }
 
   const handleAnonymousSignIn = async () => {
+    if (!auth) return;
     setIsLoading(true);
     try {
       await signInAnonymously(auth);
@@ -144,6 +175,7 @@ export function AuthForm() {
   }
   
   const handlePasswordReset = async () => {
+    if (!auth) return;
     const email = getLoginValues("email");
     if (!email) {
       toast({
@@ -248,6 +280,35 @@ export function AuthForm() {
           </CardHeader>
           <form onSubmit={handleRegisterSubmit(onRegister)}>
             <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <Label>ประเภทผู้ใช้งาน</Label>
+                {/* Role Selector for react-hook-form */}
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setValueRegister('role', 'user')}
+                    className={cn(
+                      "flex-1 p-6 rounded-[1.5rem] border-2 transition-all text-center",
+                      watchRegister('role') === 'user' ? "border-primary bg-primary/5 text-primary" : "border-slate-50 bg-slate-50 text-slate-400"
+                    )}
+                  >
+                    <div className="font-black text-lg">นักล่ารางวัล</div>
+                    <div className="text-[11px] opacity-70 mt-1 uppercase font-bold tracking-widest">ค้นหาและลงสมัครแข่ง</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setValueRegister('role', 'organizer')}
+                    className={cn(
+                      "flex-1 p-6 rounded-[1.5rem] border-2 transition-all text-center",
+                      watchRegister('role') === 'organizer' ? "border-primary bg-primary/5 text-primary" : "border-slate-50 bg-slate-50 text-slate-400"
+                    )}
+                  >
+                    <div className="font-black text-lg">ผู้จัดงาน</div>
+                    <div className="text-[11px] opacity-70 mt-1 uppercase font-bold tracking-widest">สร้างและโปรโมทงานแข่ง</div>
+                  </button>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="register-email">อีเมล</Label>
                 <Input id="register-email" type="email" placeholder="m@example.com" {...registerRegister('email')} />

@@ -1,7 +1,21 @@
 
 'use client';
 
-import { BarChart2, Briefcase, FileText, Settings, Trophy, Users, Database } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Trophy, 
+  Users, 
+  Newspaper, 
+  Image, 
+  Ticket, 
+  Settings,
+  Database,
+  Briefcase,
+  FileText,
+  BarChart2,
+  Mail,
+  Wallet
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -14,11 +28,15 @@ import {
 } from '@/components/ui/tooltip';
 
 const navItems = [
-    { href: '/admin', icon: BarChart2, label: 'ภาพรวม' },
-    { href: '/admin/competitions', icon: Briefcase, label: 'จัดการแข่งขัน' },
-    { href: '/admin/blog', icon: FileText, label: 'จัดการบทความ' },
-    { href: '/admin/users', icon: Users, label: 'จัดการผู้ใช้' },
-    { href: '/admin/seed', icon: Database, label: 'จัดการข้อมูล (Seed)' },
+    { label: 'แดชบอร์ด', href: '/admin', icon: LayoutDashboard },
+    { label: 'จัดการการแข่งขัน', href: '/admin/competitions', icon: Trophy },
+    { label: 'จัดการผู้ใช้งาน', href: '/admin/users', icon: Users },
+    { label: 'จัดการบทความ', href: '/admin/blog', icon: Newspaper },
+    { label: 'จัดการโฆษณาหน้าแรก', href: '/admin/hero-ads', icon: Image },
+    { label: 'จัดการการเงิน', href: '/admin/finance', icon: Wallet },
+    { label: 'รายการแจ้งปัญหา', href: '/admin/tickets', icon: Ticket },
+    { label: 'ระบบรับส่งอีเมล', href: '/admin/messages', icon: Mail },
+    { label: 'ตั้งค่าระบบ', href: '/admin/settings', icon: Settings },
 ];
 
 export default function AdminSidebar() {

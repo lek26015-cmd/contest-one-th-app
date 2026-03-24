@@ -28,9 +28,14 @@ export default function Footer() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                     {/* Column 1: Brand and Info */}
                     <div className="md:col-span-4 space-y-6">
-                        <Link href="/" className="flex items-center gap-2 text-2xl font-bold w-fit">
-                            <Trophy className="h-8 w-8" />
-                            <span className="font-headline">ContestOne<sup>th</sup></span>
+                        <Link href="/" className="flex items-center gap-2 group w-fit">
+                            <Image 
+                                src="/logo-contest-one-th-main.png" 
+                                alt="ContestOne" 
+                                width={160} 
+                                height={36} 
+                                className="h-10 w-auto object-contain transition-transform group-hover:scale-105 brightness-0 invert"
+                            />
                         </Link>
                         <div className="text-primary-foreground/80 text-sm space-y-2">
                             <p>แพลตฟอร์มประกวดอันดับหนึ่งของประเทศไทย ที่จะช่วยให้คุณค้นพบโอกาสใหม่ๆ และท้าทายความสามารถของคุณ</p>
@@ -64,7 +69,7 @@ export default function Footer() {
                         <FooterHeader>สำหรับผู้จัด</FooterHeader>
                         <ul className="space-y-3">
 
-                            <li><FooterLink href="/#">ราคา</FooterLink></li>
+                            <li><FooterLink href="/pricing">ราคา</FooterLink></li>
                         </ul>
                     </div>
 

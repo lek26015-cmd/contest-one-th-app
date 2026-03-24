@@ -57,14 +57,25 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allows users to create/manage their submissions. Publicly readable.
+     * @description Manages access to hero ads. Publicly readable, admin writable.
+     */
+    match /hero_ads/{adId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    /**
+     * @description DEPRECATED: Submissions have been migrated to Cloudflare D1. 
+     * Restricted access to prevent accidental legacy queries.
      * @path /submissions/{submissionId}
      */
     match /submissions/{submissionId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && (request.resource.data.userId == request.auth.uid || isAdmin());
-      allow update: if isSignedIn() && (isSubmissionOwner() || isAdmin());
-      allow delete: if isSignedIn() && (isSubmissionOwner() || isAdmin());
+      allow get: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.organizerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow list, create, update, delete: if false;
     }
 
     /**
@@ -74,6 +85,16 @@ service cloud.firestore {
     match /blog/{postId} {
       allow get, list: if true;
       allow write: if isSignedIn() && isAdmin();
+    }
+
+    /**
+     * @description Manages access to support tickets. Users can create and read their own.
+     */
+    match /tickets/{ticketId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (request.query.limit <= 100 && (request.auth.uid != null || isAdmin()));
+      allow update, delete: if isSignedIn() && isAdmin();
     }
   }
 
@@ -97,6 +118,10 @@ service cloud.firestore {
 
   function isSubmissionOwner() {
     return isSignedIn() && resource != null && resource.data.userId == request.auth.uid;
+  }
+
+  function isCompetitionOrganizer() {
+    return isSignedIn() && resource != null && resource.data.organizerId == request.auth.uid;
   }
   
   /**

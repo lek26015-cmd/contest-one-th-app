@@ -1,4 +1,4 @@
-import { Competition, BlogPost, CATEGORIES, PARTICIPANT_TYPES, BLOG_CATEGORIES } from './types';
+import { Competition, BlogPost, Lawyer, CATEGORIES, PARTICIPANT_TYPES, BLOG_CATEGORIES } from './types';
 import { Timestamp } from 'firebase/firestore';
 
 export const SEED_COMPETITIONS: Omit<Competition, 'id'>[] = [
@@ -147,3 +147,92 @@ export const SEED_BLOG_POSTS: Omit<BlogPost, 'id'>[] = [
         views: 890,
     }
 ];
+
+export const SEED_LAWYERS: Omit<Lawyer, 'id'>[] = [
+    {
+        firstName: "Somchai",
+        lastName: "Jaidee",
+        email: "somchai.j@lawfirm.com",
+        phone: "081-234-5678",
+        specialties: ["Criminal", "Family"],
+        province: "Bangkok",
+        bio: "Experienced criminal defense lawyer with over 15 years of practice. Also skilled in handling sensitive family law cases.",
+        education: ["LLB, Thammasat University", "LLM, Chulalongkorn University"],
+        experienceYears: 15,
+        licenseNumber: "1234/2550",
+        imageUrl: "https://picsum.photos/seed/lawyer1/400/400",
+        rating: 4.8,
+        reviewCount: 45,
+        consultationFee: 3000,
+        isVerified: true
+    },
+    {
+        firstName: "Suda",
+        lastName: "Rattana",
+        email: "suda.r@legalsolutions.co.th",
+        phone: "089-876-5432",
+        specialties: ["Corporate", "Intellectual Property"],
+        province: "Chiang Mai",
+        bio: "Specializes in corporate law for startups and SMEs. Expert in trademark and patent registration.",
+        education: ["LLB, Chiang Mai University", "LLM, Boston University"],
+        experienceYears: 8,
+        licenseNumber: "5678/2558",
+        imageUrl: "https://picsum.photos/seed/lawyer2/400/400",
+        rating: 4.9,
+        reviewCount: 32,
+        consultationFee: 4500,
+        isVerified: true
+    },
+    {
+        firstName: "Wichai",
+        lastName: "Srisuk",
+        email: "wichai.s@propertylaw.com",
+        phone: "02-111-2222",
+        specialties: ["Real Estate", "Civil"],
+        province: "Phuket",
+        bio: "Helping foreign and local investors with property transactions in Phuket and Southern Thailand.",
+        education: ["LLB, Ramkhamhaeng University"],
+        experienceYears: 20,
+        licenseNumber: "9012/2545",
+        imageUrl: "https://picsum.photos/seed/lawyer3/400/400",
+        rating: 4.5,
+        reviewCount: 150,
+        consultationFee: 2500,
+        isVerified: true
+    },
+    {
+        firstName: "Naree",
+        lastName: "Kongkaew",
+        email: "naree.k@laborlaw.com",
+        phone: "085-555-5555",
+        specialties: ["Labor", "Civil"],
+        province: "Bangkok",
+        bio: "Advocate for employee rights and unfair dismissal cases. Also represents employers in labor disputes.",
+        education: ["LLB, Chulalongkorn University"],
+        experienceYears: 5,
+        licenseNumber: "3456/2561",
+        imageUrl: "https://picsum.photos/seed/lawyer4/400/400",
+        rating: 4.7,
+        reviewCount: 20,
+        consultationFee: 1500,
+        isVerified: false
+    },
+    {
+        firstName: "Pipat",
+        lastName: "Udom",
+        email: "pipat.u@taxexpert.com",
+        phone: "099-999-9999",
+        specialties: ["Tax", "Corporate"],
+        province: "Bangkok",
+        bio: "Former Revenue Department officer turned tax consultant. Expert in corporate handling tax audits.",
+        education: ["LLB, Sukhothai Thammathirat Open University", "Tax Specialist Certificate"],
+        experienceYears: 12,
+        licenseNumber: "7890/2555",
+        imageUrl: "https://picsum.photos/seed/lawyer5/400/400",
+        rating: 5.0,
+        reviewCount: 10,
+        consultationFee: 5000,
+        isVerified: true
+    }
+];
+

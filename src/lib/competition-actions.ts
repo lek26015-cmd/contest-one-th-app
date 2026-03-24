@@ -9,6 +9,8 @@ import {
   addDoc,
   serverTimestamp,
   doc,
+  getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   increment,
@@ -34,6 +36,16 @@ export function getFeaturedCompetitionsQuery(firestore: Firestore) {
     where('featured', '==', true),
     where('featuredUntil', '>=', now)
   );
+}
+
+export async function getCompetition(firestore: Firestore, id: string): Promise<Competition | null> {
+  if (!firestore || !id) return null;
+  const docRef = doc(firestore, 'competitions', id);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Competition;
+  }
+  return null;
 }
 
 export function getCompetitionQuery(firestore: Firestore, id: string) {
@@ -70,7 +82,7 @@ export async function addCompetition(
     createdAt: serverTimestamp(),
   };
 
-  await updateDoc(competitionRef, competitionData);
+  await setDoc(competitionRef, competitionData);
   return newId;
 }
 
@@ -107,6 +119,12 @@ export async function incrementCompetitionView(firestore: Firestore, id: string,
 export async function toggleFeatured(firestore: Firestore, id: string, newStatus: boolean) {
   const competitionRef = doc(firestore, 'competitions', id);
   await updateDoc(competitionRef, { featured: newStatus });
+}
+
+export async function toggleApplicationEnabled(firestore: Firestore, id: string, newStatus: boolean) {
+  if (!firestore || !id) return;
+  const competitionRef = doc(firestore, 'competitions', id);
+  await updateDoc(competitionRef, { isApplicationEnabled: newStatus });
 }
 
 
@@ -199,7 +217,7 @@ export async function seedInitialCompetitions(firestore: Firestore, userId: stri
       deadline: new Date(Date.now() + (i + 1) * 2 * 24 * 60 * 60 * 1000).toISOString(),
       imageUrl: `https://picsum.photos/seed/${i + 1}/600/800`,
       category: CATEGORIES[i % CATEGORIES.length],
-      participantType: PARTICIPANT_TYPES[i % PARTICIPANT_TYPES.length],
+      participantType: [PARTICIPANT_TYPES[i % PARTICIPANT_TYPES.length]],
       views: Math.floor(Math.random() * 5000) + 100,
       featured: i < 3,
       rulesUrls: ['https://example.com/rules.pdf'],
