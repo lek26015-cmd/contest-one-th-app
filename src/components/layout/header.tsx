@@ -42,6 +42,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 export default function Header() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [showStickySearch, setShowStickySearch] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const pathname = usePathname();
@@ -49,6 +50,7 @@ export default function Header() {
   const { searchTerm, setSearchTerm, handleSearch } = useSearch();
 
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => {
       // Show sticky search after 400px of scroll
       if (window.scrollY > 400) {
@@ -73,7 +75,7 @@ export default function Header() {
   }
 
   const UserMenu = () => {
-    if (isUserLoading) {
+    if (!mounted || isUserLoading) {
       return <div className="h-10 w-24 rounded-md animate-pulse bg-slate-100" />;
     }
 
@@ -204,52 +206,62 @@ export default function Header() {
             <UserMenu />
           </div>
 
-          <Select defaultValue="th">
-            <SelectTrigger className="w-[120px] bg-slate-50 border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 transition-colors focus:ring-0 shadow-none">
-              <SelectValue placeholder="ภาษา" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="th">ภาษาไทย</SelectItem>
-              <SelectItem value="en">English</SelectItem>
-            </SelectContent>
-          </Select>
+          {mounted ? (
+            <Select defaultValue="th">
+              <SelectTrigger className="w-[120px] bg-slate-50 border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 transition-colors focus:ring-0 shadow-none">
+                <SelectValue placeholder="ภาษา" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="th">ภาษาไทย</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="w-[120px] h-10 bg-slate-50 border-slate-200 rounded-lg animate-pulse" />
+          )}
         </div>
 
         {/* Mobile Menu */}
         <div className="md:hidden flex items-center gap-2">
            <UserMenu />
-           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-slate-900">
+           {mounted ? (
+             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-slate-900">
+                  <Menu />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px]">
+                  <SheetHeader>
+                      <SheetTitle className="text-left font-black text-xl">เมนู</SheetTitle>
+                  </SheetHeader>
+                <div className="py-6">
+                   <div className="flex flex-col space-y-2">
+                      <SheetClose asChild>
+                        <Link href="/" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">หน้าหลัก</Link>
+                      </SheetClose>
+                       <SheetClose asChild>
+                        <Link href="/blog" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">บล็อก</Link>
+                      </SheetClose>
+                       <SheetClose asChild>
+                        <Link href="/pricing" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">ราคา</Link>
+                      </SheetClose>
+                       <SheetClose asChild>
+                        <Link href="/about" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">เกี่ยวกับเรา</Link>
+                      </SheetClose>
+                      <Separator className="my-2" />
+                      <SheetClose asChild>
+                        <Link href="/dashboard/organizer" className="px-4 py-3 rounded-xl font-black text-primary hover:bg-primary/5">สำหรับผู้จัดงาน</Link>
+                      </SheetClose>
+                   </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+           ) : (
+             <Button variant="ghost" size="icon" className="text-slate-900 opacity-50">
                 <Menu />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px]">
-                <SheetHeader>
-                    <SheetTitle className="text-left font-black text-xl">เมนู</SheetTitle>
-                </SheetHeader>
-              <div className="py-6">
-                 <div className="flex flex-col space-y-2">
-                    <SheetClose asChild>
-                      <Link href="/" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">หน้าหลัก</Link>
-                    </SheetClose>
-                     <SheetClose asChild>
-                      <Link href="/blog" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">บล็อก</Link>
-                    </SheetClose>
-                     <SheetClose asChild>
-                      <Link href="/pricing" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">ราคา</Link>
-                    </SheetClose>
-                     <SheetClose asChild>
-                      <Link href="/about" className="px-4 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-50">เกี่ยวกับเรา</Link>
-                    </SheetClose>
-                    <Separator className="my-2" />
-                    <SheetClose asChild>
-                      <Link href="/dashboard/organizer" className="px-4 py-3 rounded-xl font-black text-primary hover:bg-primary/5">สำหรับผู้จัดงาน</Link>
-                    </SheetClose>
-                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+             </Button>
+           )}
         </div>
       </div>
     </header>
