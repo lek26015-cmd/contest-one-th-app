@@ -82,10 +82,10 @@ export default function CompetitionBrowserV2({ competitions, isLoading }: { comp
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
         {/* List View */}
         <div className={cn(
-          "lg:col-span-4 xl:col-span-5 flex flex-col h-[calc(100vh-14rem)] overflow-y-auto pr-2 block"
+          "lg:col-span-4 xl:col-span-3 flex flex-col h-[calc(100vh-10rem)] overflow-y-auto pr-4 block no-scrollbar"
         )}>
           <AnimatePresence mode="popLayout">
             {competitions.length > 0 ? (
@@ -113,8 +113,8 @@ export default function CompetitionBrowserV2({ competitions, isLoading }: { comp
         </div>
 
         {/* Detail View (Desktop) */}
-        <div className="hidden lg:block lg:col-span-8 xl:col-span-7 h-[calc(100vh-14rem)] sticky top-24">
-          <div className="h-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div className="hidden lg:block lg:col-span-8 xl:col-span-9 h-[calc(100vh-10rem)] sticky top-24">
+          <div className="h-full bg-white rounded-[2.5rem] border border-slate-200/60 shadow-xl shadow-slate-200/20 overflow-hidden flex flex-col transition-all">
             {selectedCompetition ? (
               <CompetitionDetailView competition={selectedCompetition} />
             ) : (

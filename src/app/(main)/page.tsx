@@ -137,13 +137,13 @@ export default function Home() {
       </section>
 
       <div className="bg-[#F2F2F2] min-h-screen">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col items-center mb-10">
+        <div className="mx-auto px-4 py-8 w-full max-w-[1400px] 2xl:max-w-[1600px]">
+          <div className="flex flex-col items-center mb-8">
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 relative inline-block">
               งานแข่งขันสำหรับคุณ
               <div className="absolute -bottom-2 left-0 right-0 h-1.5 bg-primary/20 rounded-full" />
             </h2>
-            <p className="text-slate-500 font-bold mt-2">ค้นพบโอกาสใหม่ๆ ในการแสดงความสามารถของคุณ</p>
+            <p className="text-slate-500 font-bold mt-2 text-center">ค้นพบโอกาสใหม่ๆ ในการแสดงความสามารถของคุณ</p>
           </div>
 
           <div id="competitions" className="relative h-full">
