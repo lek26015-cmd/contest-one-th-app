@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useComparison } from '@/providers/comparison-provider';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { getCompetitionsQuery } from '@/lib/competition-actions';
 import type { Competition } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 export default function ComparePage() {
   const { selectedIds, toggleComparison, clearComparison } = useComparison();
   const firestore = useFirestore();
-  const competitionsQuery = getCompetitionsQuery(firestore);
+  const competitionsQuery = useMemoFirebase(() => getCompetitionsQuery(firestore), [firestore]);
   const { data: allCompetitions, isLoading } = useCollection<Competition>(competitionsQuery);
   
   const [comparisons, setComparisons] = useState<Competition[]>([]);
